@@ -1,4 +1,4 @@
 # Upstream image pinned to immutable digest for supply chain security
-FROM ghcr.io/home-assistant/home-assistant:2026.4.2@sha256:4c940155cfd5b0187a6faee2db5d52b98bb573edc1aeee95d0818bb17b6534d7
+FROM ghcr.io/home-assistant/home-assistant:2026.5.1@sha256:d4fbec16196d5c8bedf32647f0ca7165f654d92a2e81f35a373508d3226cb867
 
 # Add any customisation below this line
