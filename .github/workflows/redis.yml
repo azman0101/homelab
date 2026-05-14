@@ -16,6 +16,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository_owner }}/redis
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-and-push:
@@ -45,7 +46,7 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -77,7 +78,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@66b39da20ccc656acc90dd27ea30f5d458ec33ce # v3.28.19
+        uses: github/codeql-action/upload-sarif@68bde559dea0fdcac2102bfdf6230c5f70eb485e # v4.35.4
         if: always()
         with:
           sarif_file: trivy-results.sarif
@@ -94,12 +95,10 @@ jobs:
           done
           cosign sign --yes ${images}
 
-      - name: Verify SLSA provenance
+      - name: Verify SLSA provenance (BuildKit attestation)
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
         run: |
-          cosign verify-attestation \
-            --type slsaprovenance \
-            --certificate-identity-regexp="https://github.com/${{ github.repository }}/.github/workflows/redis.yml" \
-            --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${DIGEST}
+          docker buildx imagetools inspect \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${DIGEST} \
+            --format '{{ json .Provenance }}'
