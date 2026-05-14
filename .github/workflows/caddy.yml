@@ -33,7 +33,7 @@ jobs:
         id: version
         run: |
           # Extracts the version and prepends 'v' only if it starts with a digit
-          VERSION=$(grep "FROM" caddy/Dockerfile | head -n 1 | cut -d ':' -f 2 | cut -d '@' -f 1 | xargs)
+          VERSION=$(grep "FROM" caddy/Dockerfile | tail -n 1 | cut -d ':' -f 2 | cut -d '@' -f 1 | xargs)
           VERSION=$(echo $VERSION | sed -E 's/^([0-9])/v\1/')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 

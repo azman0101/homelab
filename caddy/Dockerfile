@@ -1,4 +1,11 @@
-# Upstream image pinned to immutable digest for supply chain security
-FROM ghcr.io/azman0101/caddy:v2.11.3@sha256:bd8a2d42d1f40d362f389efa3943bed6dc6c29dab234ebd98818db9a899602c2
+# Stage 1: Builder
+FROM caddy:2.11.3-builder@sha256:f96a3b748f2ce4e5f6595453615da734b93993b231213fe35d0673893b5613ef AS builder
 
-# Add any customisation below this line
+RUN xcaddy build \
+    --with github.com/hslatman/caddy-crowdsec-bouncer@v0.12.1 \
+    --output /usr/bin/caddy
+
+# Stage 2: Final
+FROM caddy:2.11.3@sha256:ec18ee54aab3315c22e25f3b2babda73ff8007d39b13b3bd1bfffa2f0444c7d9
+
+COPY --from=builder /usr/bin/caddy /usr/bin/caddy
