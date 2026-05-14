@@ -7,8 +7,6 @@ on:
       - '.github/workflows/caddy.yml'
     tags:
       - 'caddy/v*'
-  release:
-    types: [published]
   schedule:
     - cron: '0 3 * * 1'   # Weekly Monday 03:00 UTC to catch upstream CVE fixes
   workflow_dispatch:

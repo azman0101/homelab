@@ -16,6 +16,11 @@ updates:
     directory: "/caddy"
     schedule:
       interval: "daily"
+    allow:
+      - dependency-name: "caddy"
+    labels:
+      - "dependencies"
+      - "automated-merge"
 
   - package-ecosystem: "docker"
     directory: "/crowdsec"
