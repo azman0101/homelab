@@ -56,3 +56,8 @@ updates:
     directory: "/redis"
     schedule:
       interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/uptime-kuma"
+    schedule:
+      interval: "daily"
