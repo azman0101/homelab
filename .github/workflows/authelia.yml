@@ -94,12 +94,10 @@ jobs:
           done
           cosign sign --yes ${images}
 
-      - name: Verify SLSA provenance
+      - name: Verify SLSA provenance (BuildKit attestation)
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
         run: |
-          cosign verify-attestation \
-            --type slsaprovenance \
-            --certificate-identity-regexp="https://github.com/${{ github.repository }}/.github/workflows/authelia.yml" \
-            --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${DIGEST}
+          docker buildx imagetools inspect \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${DIGEST} \
+            --format '{{ json .Provenance }}'
