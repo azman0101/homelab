@@ -1,0 +1,55 @@
+name: Trivy PR Scan
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      images: ${{ steps.extract.outputs.images }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Extract parent images
+        id: extract
+        run: |
+          IMAGES=$(find . -name Dockerfile -exec awk '/^FROM / {for(i=2;i<=NF;i++) if($i !~ /^--/) {print $i; break}}' {} + | sort -u | jq -R -s -c 'split("\n")[:-1]')
+          if [ "$IMAGES" = "[]" ] || [ -z "$IMAGES" ]; then
+            IMAGES='["scratch"]'
+          fi
+          echo "images=$IMAGES" >> $GITHUB_OUTPUT
+
+  scan:
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJson(needs.prepare.outputs.images) }}
+    steps:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: ${{ matrix.image }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: ${{ matrix.image }}
