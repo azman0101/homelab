@@ -2,6 +2,10 @@ name: Trivy PR Scan
 
 on:
   pull_request:
+  push:
+    branches:
+      - main
+      - master
 
 permissions:
   contents: read
@@ -14,18 +18,35 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
 
       - name: Extract parent images
         id: extract
         run: |
-          IMAGES=$(find . -name Dockerfile -exec awk '/^FROM / {for(i=2;i<=NF;i++) if($i !~ /^--/) {print $i; break}}' {} + | sort -u | jq -R -s -c 'split("\n")[:-1]')
-          if [ "$IMAGES" = "[]" ] || [ -z "$IMAGES" ]; then
-            IMAGES='["scratch"]'
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            # Get modified Dockerfiles using diff-filter=AM to ignore deleted/renamed files
+            # No null termination since bash variables can't handle null bytes well, and spaces are unlikely for our Dockerfiles.
+            # Using -E '(^|/)Dockerfile$' to strictly match Dockerfiles
+            DOCKERFILES=$(git diff --name-only --diff-filter=AM origin/${{ github.base_ref }} ${{ github.sha }} | grep -E '(^|/)Dockerfile$' || true)
+          else
+            # Find all Dockerfiles for push to default branch
+            DOCKERFILES=$(find . -name Dockerfile)
+          fi
+
+          if [ -z "$DOCKERFILES" ]; then
+            IMAGES='[]'
+          else
+            IMAGES=$(echo "$DOCKERFILES" | tr '\n' '\0' | xargs -0 -r awk '/^FROM / {for(i=2;i<=NF;i++) if($i !~ /^--/) {print $i; break}}' | sort -u | jq -R -s -c 'split("\n")[:-1]')
+            if [ "$IMAGES" = "[]" ] || [ -z "$IMAGES" ]; then
+              IMAGES='[]'
+            fi
           fi
           echo "images=$IMAGES" >> $GITHUB_OUTPUT
 
   scan:
     needs: prepare
+    if: ${{ needs.prepare.outputs.images != '[]' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
