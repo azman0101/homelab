@@ -35,17 +35,18 @@ jobs:
           fi
 
           if [ -z "$DOCKERFILES" ]; then
-            IMAGES='["scratch"]'
+            IMAGES='[]'
           else
             IMAGES=$(echo "$DOCKERFILES" | tr '\n' '\0' | xargs -0 -r awk '/^FROM / {for(i=2;i<=NF;i++) if($i !~ /^--/) {print $i; break}}' | sort -u | jq -R -s -c 'split("\n")[:-1]')
             if [ "$IMAGES" = "[]" ] || [ -z "$IMAGES" ]; then
-              IMAGES='["scratch"]'
+              IMAGES='[]'
             fi
           fi
           echo "images=$IMAGES" >> $GITHUB_OUTPUT
 
   scan:
     needs: prepare
+    if: ${{ needs.prepare.outputs.images != '[]' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
