@@ -22,6 +22,8 @@ Every image in this repository is:
 | [redis](./redis) | Redis in-memory data store | alpine |
 | [postfix-relay](./postfix-relay) | Postfix relay - lightweight mail relay | latest |
 | [pihole](./pihole) | Pi-hole - network-wide ad blocking | latest |
+| [uptime-kuma](./uptime-kuma) | Uptime Kuma - Self-hosted monitoring tool | v2.3.2 |
+| [influxdb](./influxdb) | InfluxDB - Open-source time-series database | 2.9.1-alpine |
 
 ## Quick verify any image
 
