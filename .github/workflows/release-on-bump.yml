@@ -24,7 +24,7 @@ jobs:
           COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
           # List of services to check
-          SERVICES=("authelia" "caddy" "crowdsec" "frigate" "home-assistant" "mosquitto" "pihole" "postfix-relay" "redis" "uptime-kuma")
+          SERVICES=("authelia" "caddy" "crowdsec" "frigate" "home-assistant" "influxdb" "mosquitto" "pihole" "postfix-relay" "redis" "uptime-kuma")
 
           for SERVICE in "${SERVICES[@]}"; do
             # Check if commit message contains "Bump [service]"

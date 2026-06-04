@@ -61,3 +61,8 @@ updates:
     directory: "/uptime-kuma"
     schedule:
       interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/influxdb"
+    schedule:
+      interval: "daily"
