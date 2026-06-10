@@ -20,7 +20,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
       id-token: write          # keyless cosign OIDC signing
       security-events: write   # upload Trivy SARIF to GitHub Security tab
@@ -28,6 +28,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Scan dependencies for malicious behavior (Socket)
+        env:
+          SOCKET_SECURITY_API_KEY: ${{ secrets.SOCKET_SECURITY_API_KEY }}
+        run: |
+          if [ -n "$SOCKET_SECURITY_API_KEY" ]; then
+            npx -y @socketsecurity/cli scan ./uptime-kuma || true
+          else
+            echo "No Socket API key provided, skipping behavioral scan."
+          fi
 
       - name: Get base image version
         id: version
@@ -90,6 +100,13 @@ jobs:
         with:
           sarif_file: trivy-results.sarif
           category: uptime-kuma
+
+      - name: Submit SBOM to GitHub Dependency Graph
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          format: 'github'
+          github-pat: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Sign the published Docker image
         env:
