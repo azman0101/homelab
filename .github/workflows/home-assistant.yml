@@ -104,6 +104,7 @@ jobs:
 
       - name: Submit SBOM to GitHub Dependency Graph
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        continue-on-error: true  # Home Assistant image generates a large SBOM that may exceed the 10 MB API limit
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
           format: 'github'
