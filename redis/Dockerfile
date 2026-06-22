@@ -1,4 +1,4 @@
 # Upstream image pinned to immutable digest for supply chain security
-FROM redis:8.6.4-alpine@sha256:d103b9cd0b54b98b2c38e2b19220ee7adfe4b0fb22c406baa75f321179da2f00
+FROM redis:8.8.0-alpine@sha256:09160599abd229764c0fb44cb6be640294e1d360a54b19985ab4843dcf2d90f1
 
 # Add any customisation below this line
