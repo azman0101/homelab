@@ -1,4 +1,4 @@
 # Upstream image pinned to immutable digest for supply chain security
-FROM influxdb:2.9.1-alpine@sha256:1cb8fa92ff9d13518d8198dae872b7ea523757a03c655d12a67175b1ab7a72f0
+FROM influxdb:1.12-alpine@sha256:7d08136634b8da51fbb5a651b4b0127c1527d9f35c0fd1b8761ee9c5ce258889
 
 # Add any customisation below this line
