@@ -1,4 +1,4 @@
 # Upstream image pinned to immutable digest for supply chain security
-FROM mwader/postfix-relay:1.2.15@sha256:fd150067d6d6a88f129babef404f112100fb5348d614edde815b78a92eb18f28
+FROM mwader/postfix-relay:1.2.16@sha256:6beb9f9c77e8fe73192e4c7c543be639444083ac76eb265ee35729755d70a8e4
 
 # Add any customisation below this line
