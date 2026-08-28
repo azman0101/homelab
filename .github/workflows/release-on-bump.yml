@@ -53,28 +53,17 @@ jobs:
               # Update service README.md if present
               SERVICE_README="$SERVICE/README.md"
               if [ -f "$SERVICE_README" ]; then
-                python3 -c "
-import sys, re
-path, img = sys.argv[1], sys.argv[2]
-with open(path, 'r') as f:
-    c = f.read()
-c = re.sub(r'(## Upstream image\s*\n\n```\n)(.*?)(\n```)', r'\g<1>' + img + r'\g<3>', c, flags=re.DOTALL)
-with open(path, 'w') as f:
-    f.write(c)
-" "$SERVICE_README" "$UPSTREAM_IMAGE"
+                UPSTREAM_IMG="$UPSTREAM_IMAGE" perl -i -0777 -pe 's/(## Upstream image\s*\n\n```\n).*?(\n```)/$1$ENV{UPSTREAM_IMG}$2/s' "$SERVICE_README"
               fi
 
               # Update root README.md version column
-              python3 -c "
-import sys, re
-s, ver = sys.argv[1], sys.argv[2]
-with open('README.md', 'r') as f:
-    c = f.read()
-pattern = r'(\|\s*\[(?:' + re.escape(s) + r')\]\(\./(?:' + re.escape(s) + r')\)\s*\|\s*[^|]+\s*\|\s*)[^|]+(\s*\|)'
-c = re.sub(pattern, r'\g<1>' + ver + r' \g<2>', c)
-with open('README.md', 'w') as f:
-    f.write(c)
-" "$SERVICE" "$RAW_VERSION"
+              SRV="$SERVICE" RAW_VER="$RAW_VERSION" perl -i -pe '
+                $s = $ENV{SRV}; $v = $ENV{RAW_VER};
+                if (/^\|\s*\[\Q$s\E\]\(\.\/\Q$s\E\)\s*\|/) {
+                  @p = split(/\s*\|\s*/, $_);
+                  $_ = "| $p[1] | $p[2] | $v |\n";
+                }
+              ' README.md
 
               # The tag format used in your build workflows is [service]/v*
               TAG="$SERVICE/$VERSION"
