@@ -5,7 +5,7 @@ Caddy web server with CrowdSec bouncer
 ## Upstream image
 
 ```
-ghcr.io/azman0101/caddy:v2.11.2@sha256:ef8f6343c66c4b523a14d84b43caef9397419133491403409543c767ae1b4f2e
+caddy:2.11.4@sha256:533f1bff9a76426aee55fb2934636c25a2769aad8fb57f34dd39cca8cd2bab84
 ```
 
 ## Supply chain security

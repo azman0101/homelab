@@ -11,14 +11,14 @@ permissions:
 jobs:
   tag-and-release:
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.message, 'Bump')
+    if: contains(github.event.head_commit.message, 'bump') || contains(github.event.head_commit.message, 'Bump')
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
 
-      - name: Detect bumps and create releases
+      - name: Detect bumps, update READMEs and create releases
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMMIT_MSG: ${{ github.event.head_commit.message }}
@@ -26,10 +26,10 @@ jobs:
           # List of services to check
           SERVICES=("authelia" "caddy" "crowdsec" "frigate" "home-assistant" "influxdb" "mosquitto" "pihole" "postfix-relay" "redis" "uptime-kuma")
 
+          shopt -s nocasematch
           for SERVICE in "${SERVICES[@]}"; do
-            # Check if commit message contains "Bump [service]"
-            # We use case-insensitive matching to be safe
-            if echo "$COMMIT_MSG" | grep -iq "Bump $SERVICE"; then
+            # Check if commit message indicates bump for SERVICE (either "in /SERVICE" or "Bump ... SERVICE")
+            if [[ "$COMMIT_MSG" == *"in /$SERVICE"* || "$COMMIT_MSG" == *"Bump "*"$SERVICE"* ]]; then
               echo "Detected bump for $SERVICE"
 
               DOCKERFILE="$SERVICE/Dockerfile"
@@ -40,13 +40,41 @@ jobs:
 
               # Extracts the version and prepends 'v' only if it starts with a digit
               # We use 'tail -n 1' to pick the production image in multi-stage builds
-              RAW_VERSION=$(grep "FROM" "$DOCKERFILE" | tail -n 1 | cut -d ':' -f 2 | cut -d '@' -f 1 | xargs)
+              LAST_FROM=$(grep "FROM" "$DOCKERFILE" | tail -n 1)
+              UPSTREAM_IMAGE=$(echo "$LAST_FROM" | sed -E 's/^FROM[[:space:]]+([^[:space:]]+).*/\1/')
+              RAW_VERSION=$(echo "$UPSTREAM_IMAGE" | cut -d ':' -f 2 | cut -d '@' -f 1 | xargs)
               VERSION=$(echo "$RAW_VERSION" | sed -E 's/^([0-9])/v\1/')
 
               if [ -z "$VERSION" ]; then
                 echo "Error: Could not extract version for $SERVICE"
                 continue
               fi
+
+              # Update service README.md if present
+              SERVICE_README="$SERVICE/README.md"
+              if [ -f "$SERVICE_README" ]; then
+                python3 -c "
+import sys, re
+path, img = sys.argv[1], sys.argv[2]
+with open(path, 'r') as f:
+    c = f.read()
+c = re.sub(r'(## Upstream image\s*\n\n```\n)(.*?)(\n```)', r'\g<1>' + img + r'\g<3>', c, flags=re.DOTALL)
+with open(path, 'w') as f:
+    f.write(c)
+" "$SERVICE_README" "$UPSTREAM_IMAGE"
+              fi
+
+              # Update root README.md version column
+              python3 -c "
+import sys, re
+s, ver = sys.argv[1], sys.argv[2]
+with open('README.md', 'r') as f:
+    c = f.read()
+pattern = r'(\|\s*\[(?:' + re.escape(s) + r')\]\(\./(?:' + re.escape(s) + r')\)\s*\|\s*[^|]+\s*\|\s*)[^|]+(\s*\|)'
+c = re.sub(pattern, r'\g<1>' + ver + r' \g<2>', c)
+with open('README.md', 'w') as f:
+    f.write(c)
+" "$SERVICE" "$RAW_VERSION"
 
               # The tag format used in your build workflows is [service]/v*
               TAG="$SERVICE/$VERSION"
@@ -63,3 +91,13 @@ jobs:
               fi
             fi
           done
+          shopt -u nocasematch
+
+          # Commit README updates if any
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet README.md */README.md; then
+            git add README.md */README.md
+            git commit -m "docs: update README files for released versions"
+            git push origin main
+          fi

@@ -5,7 +5,7 @@ Frigate NVR - Network Video Recorder with local AI object detection
 ## Upstream image
 
 ```
-ghcr.io/blakeblackshear/frigate:0.17.1@sha256:6650ae416ec057956e9921fc5d6d6314cf8a1eb1529446121468fa8c177caef2
+ghcr.io/blakeblackshear/frigate:0.17.2@sha256:d4351369984d4a9e2a49ac59736f6490856a7ea11f7790040746d21496967010
 ```
 
 ## Supply chain security

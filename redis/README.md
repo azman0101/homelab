@@ -5,7 +5,7 @@ Redis in-memory data store
 ## Upstream image
 
 ```
-redis:alpine@sha256:2afba59292f25f5d1af200496db41bea2c6c816b059f57ae74703a50a03a27d0
+redis:8.8.0-alpine@sha256:09160599abd229764c0fb44cb6be640294e1d360a54b19985ab4843dcf2d90f1
 ```
 
 ## Supply chain security

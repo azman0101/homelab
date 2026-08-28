@@ -1,11 +1,11 @@
-# pihole
+# uptime-kuma
 
-Pi-hole - network-wide ad blocking
+Uptime Kuma - Self-hosted monitoring tool
 
 ## Upstream image
 
 ```
-pihole/pihole:2026.06.0@sha256:8ea95136e7c8c15b42d88eadf1a3875421aa1be30ad39e50f661188cc986fb27
+louislam/uptime-kuma:2.5.3@sha256:3e24e96c89efff0e3a4b0698cbdd36c15ad3022371db57166e5588853002ee5c
 ```
 
 ## Supply chain security
@@ -20,7 +20,7 @@ This image is:
 ## Verify the signature
 
 ```bash
-cosign verify ghcr.io/${GITHUB_REPOSITORY_OWNER}/pihole:latest \
+cosign verify ghcr.io/${GITHUB_REPOSITORY_OWNER}/uptime-kuma:latest \
   --certificate-identity-regexp="https://github.com/${GITHUB_REPOSITORY}" \
   --certificate-oidc-issuer="https://token.actions.githubusercontent.com"
 ```
@@ -32,11 +32,11 @@ cosign verify-attestation \
   --type slsaprovenance \
   --certificate-identity-regexp="https://github.com/${GITHUB_REPOSITORY}" \
   --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
-  ghcr.io/${GITHUB_REPOSITORY_OWNER}/pihole:latest
+  ghcr.io/${GITHUB_REPOSITORY_OWNER}/uptime-kuma:latest
 ```
 
 ## Scan for vulnerabilities
 
 ```bash
-trivy image ghcr.io/${GITHUB_REPOSITORY_OWNER}/pihole:latest
+trivy image ghcr.io/${GITHUB_REPOSITORY_OWNER}/uptime-kuma:latest
 ```
