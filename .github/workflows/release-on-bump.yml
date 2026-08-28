@@ -26,10 +26,11 @@ jobs:
           # List of services to check
           SERVICES=("authelia" "caddy" "crowdsec" "frigate" "home-assistant" "influxdb" "mosquitto" "pihole" "postfix-relay" "redis" "uptime-kuma")
 
+          shopt -s nocasematch
           for SERVICE in "${SERVICES[@]}"; do
             # Check if commit message contains "Bump [service]"
             # We use case-insensitive matching to be safe
-            if echo "$COMMIT_MSG" | grep -iq "Bump $SERVICE"; then
+            if [[ "$COMMIT_MSG" == *"Bump $SERVICE"* ]]; then
               echo "Detected bump for $SERVICE"
 
               DOCKERFILE="$SERVICE/Dockerfile"
@@ -39,9 +40,37 @@ jobs:
               fi
 
               # Extracts the version and prepends 'v' only if it starts with a digit
-              # We use 'tail -n 1' to pick the production image in multi-stage builds
-              RAW_VERSION=$(grep "FROM" "$DOCKERFILE" | tail -n 1 | cut -d ':' -f 2 | cut -d '@' -f 1 | xargs)
-              VERSION=$(echo "$RAW_VERSION" | sed -E 's/^([0-9])/v\1/')
+
+              # We use a pure bash loop to pick the production image in multi-stage builds
+              last_from=""
+              while read -r line || [[ -n "$line" ]]; do
+                if [[ "$line" == FROM* ]]; then
+                  last_from="$line"
+                fi
+              done < "$DOCKERFILE"
+
+              if [[ -n "$last_from" ]]; then
+                RAW_VERSION="$last_from"
+
+                if [[ "$RAW_VERSION" == *:* ]]; then
+                  RAW_VERSION="${RAW_VERSION#*:}"
+                  RAW_VERSION="${RAW_VERSION%%:*}"
+                fi
+
+                RAW_VERSION="${RAW_VERSION%%@*}"
+
+                # trim whitespace
+                RAW_VERSION="${RAW_VERSION#"${RAW_VERSION%%[![:space:]]*}"}"
+                RAW_VERSION="${RAW_VERSION%"${RAW_VERSION##*[![:space:]]}"}"
+
+                if [[ "$RAW_VERSION" =~ ^[0-9] ]]; then
+                  VERSION="v$RAW_VERSION"
+                else
+                  VERSION="$RAW_VERSION"
+                fi
+              else
+                VERSION=""
+              fi
 
               if [ -z "$VERSION" ]; then
                 echo "Error: Could not extract version for $SERVICE"
@@ -63,3 +92,4 @@ jobs:
               fi
             fi
           done
+          shopt -u nocasematch
