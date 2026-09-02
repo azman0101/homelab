@@ -1,4 +1,4 @@
 # Upstream image pinned to immutable digest for supply chain security
-FROM crowdsecurity/crowdsec:v1.7.8@sha256:2f527c9bb8b367120eb08b82890aa912ce96bfa1ada93dda0721700e4b4e0dde
+FROM crowdsecurity/crowdsec:v1.8.0@sha256:99eb4df235527e978595ef5ebb30182831686dc875521de67ef39b7659a86897
 
 # Add any customisation below this line
