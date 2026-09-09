@@ -17,7 +17,7 @@ Every image in this repository is:
 | [mosquitto](./mosquitto) | Eclipse Mosquitto MQTT broker | 2.1.2-alpine |
 | [frigate](./frigate) | Frigate NVR - Network Video Recorder with local AI object detection | 0.17.2 |
 | [caddy](./caddy) | Caddy web server with CrowdSec bouncer | 2.11.4 |
-| [crowdsec](./crowdsec) | CrowdSec - collaborative security engine | v1.7.8 |
+| [crowdsec](./crowdsec) | CrowdSec - collaborative security engine | v1.8.1 |
 | [authelia](./authelia) | Authelia - open-source authentication and authorization server | 4.39.23 |
 | [redis](./redis) | Redis in-memory data store | 8.8.0-alpine |
 | [postfix-relay](./postfix-relay) | Postfix relay - lightweight mail relay | 1.2.16 |
