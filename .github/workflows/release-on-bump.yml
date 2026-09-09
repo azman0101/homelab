@@ -69,9 +69,17 @@ jobs:
                 }
               ' README.md
 
+              PREV_TAG=$(git tag -l "$SERVICE/*" --sort=-v:refname | grep -v "^$TAG$" | head -n 1 || true)
+              EXTRA_FLAGS=()
+              if [ -n "$PREV_TAG" ]; then
+                echo "Found previous tag for $SERVICE: $PREV_TAG"
+                EXTRA_FLAGS+=("--notes-start-tag" "$PREV_TAG")
+              fi
+
               gh release create "$TAG" \
                 --title "$TAG" \
-                --generate-notes
+                --generate-notes \
+                "${EXTRA_FLAGS[@]}"
             fi
           done
 
