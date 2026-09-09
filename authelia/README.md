@@ -5,7 +5,7 @@ Authelia - open-source authentication and authorization server
 ## Upstream image
 
 ```
-authelia/authelia:4.39.20@sha256:1b363e9279e742397966333f364e0876ae02bf5c876de73e83af6d48c57ff51b
+authelia/authelia:4.39.23@sha256:0b6409d5cfa1bc244812fa4094f0272421ac156b864ed4178c60480c3f6d3ee9
 ```
 
 ## Supply chain security
