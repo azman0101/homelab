@@ -89,16 +89,15 @@ jobs:
         env:
           IMAGE_REF: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
           CST_IMAGE_TAG: gcr.io/gcp-runtimes/container-structure-test:v1.16.0
-          CST_IMAGE_DIGEST: sha256:377f9a9bc00376b9fa6dc6a3a020dbe40e84ebe9481b71969aa3ff9d1c9ea17e
+          CST_BINARY_SHA256: 9cc21a2dbe6f72a6a10195cc3b6fd1db5eb76c4aaeac09b42b06a6f017f4de4a
         run: |
           docker pull "${IMAGE_REF}"
           docker pull "${CST_IMAGE_TAG}"
-          ACTUAL_CST_DIGEST=$(docker image inspect "${CST_IMAGE_TAG}" --format '{{index .RepoDigests 0}}' | cut -d'@' -f2)
-          test "${ACTUAL_CST_DIGEST}" = "${CST_IMAGE_DIGEST}"
           CST_CONTAINER_ID=$(docker create "${CST_IMAGE_TAG}")
           docker cp "${CST_CONTAINER_ID}:/container-structure-test" /tmp/container-structure-test
           docker rm "${CST_CONTAINER_ID}"
           chmod +x /tmp/container-structure-test
+          echo "${CST_BINARY_SHA256}  /tmp/container-structure-test" | sha256sum -c -
           /tmp/container-structure-test test --image "${IMAGE_REF}" --config caddy/cst.yaml
 
       - name: Run Trivy vulnerability scanner
