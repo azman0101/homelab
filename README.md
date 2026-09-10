@@ -19,7 +19,7 @@ Every image in this repository is:
 | [caddy](./caddy) | Caddy web server with CrowdSec bouncer | 2.11.4 |
 | [crowdsec](./crowdsec) | CrowdSec - collaborative security engine | v1.8.1 |
 | [authelia](./authelia) | Authelia - open-source authentication and authorization server | 4.39.24 |
-| [redis](./redis) | Redis in-memory data store | 8.8.0-alpine |
+| [redis](./redis) | Redis in-memory data store | 8.10.1-alpine |
 | [postfix-relay](./postfix-relay) | Postfix relay - lightweight mail relay | 1.2.16 |
 | [pihole](./pihole) | Pi-hole - network-wide ad blocking | 2026.07.2 |
 | [uptime-kuma](./uptime-kuma) | Uptime Kuma - Self-hosted monitoring tool | 2.5.3 |
