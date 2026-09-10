@@ -88,8 +88,8 @@ jobs:
       - name: Run Container Structure Tests
         env:
           IMAGE_REF: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
-          CST_IMAGE_TAG: gcr.io/gcp-runtimes/container-structure-test:v1.16.0
-          CST_BINARY_SHA256: 9cc21a2dbe6f72a6a10195cc3b6fd1db5eb76c4aaeac09b42b06a6f017f4de4a # linux/amd64 binary checksum
+          CST_IMAGE_TAG: gcr.io/gcp-runtimes/container-structure-test:v1.22.1
+          CST_BINARY_SHA256: fa35e89512a8978585f76cf41397956d2e3a30c62c2ad3fb857b1597074d14ca # linux/amd64 binary checksum
         run: |
           docker pull "${IMAGE_REF}"
           docker pull "${CST_IMAGE_TAG}"
