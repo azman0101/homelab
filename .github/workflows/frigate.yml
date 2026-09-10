@@ -85,6 +85,21 @@ jobs:
           sbom: true
           provenance: true
 
+      - name: Run Container Structure Tests
+        env:
+          IMAGE_REF: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          CST_IMAGE_TAG: gcr.io/gcp-runtimes/container-structure-test:v1.22.1
+          CST_BINARY_SHA256: fa35e89512a8978585f76cf41397956d2e3a30c62c2ad3fb857b1597074d14ca # linux/amd64 binary checksum
+        run: |
+          docker pull "${IMAGE_REF}"
+          docker pull "${CST_IMAGE_TAG}"
+          CST_CONTAINER_ID=$(docker create "${CST_IMAGE_TAG}")
+          docker cp "${CST_CONTAINER_ID}:/container-structure-test" /tmp/container-structure-test
+          docker rm "${CST_CONTAINER_ID}"
+          chmod +x /tmp/container-structure-test
+          echo "${CST_BINARY_SHA256}  /tmp/container-structure-test" | sha256sum -c -
+          /tmp/container-structure-test test --image "${IMAGE_REF}" --config frigate/cst.yaml
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
