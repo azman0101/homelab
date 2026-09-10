@@ -88,9 +88,11 @@ jobs:
       - name: Run Container Structure Tests
         env:
           IMAGE_REF: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          CST_IMAGE_REF: gcr.io/gcp-runtimes/container-structure-test@sha256:377f9a9bc00376b9fa6dc6a3a020dbe40e84ebe9481b71969aa3ff9d1c9ea17e
         run: |
           docker pull "${IMAGE_REF}"
-          CST_CONTAINER_ID=$(docker create gcr.io/gcp-runtimes/container-structure-test:v1.16.0)
+          docker pull "${CST_IMAGE_REF}"
+          CST_CONTAINER_ID=$(docker create "${CST_IMAGE_REF}")
           docker cp "${CST_CONTAINER_ID}:/container-structure-test" /tmp/container-structure-test
           docker rm "${CST_CONTAINER_ID}"
           chmod +x /tmp/container-structure-test
