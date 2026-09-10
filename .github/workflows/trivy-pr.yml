@@ -27,15 +27,34 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           BASE_REF: ${{ github.base_ref }}
           SHA: ${{ github.sha }}
+          BEFORE: ${{ github.event.before }}
         run: |
           if [ "$EVENT_NAME" == "pull_request" ]; then
-            # Get modified Dockerfiles using diff-filter=AM to ignore deleted/renamed files
-            # No null termination since bash variables can't handle null bytes well, and spaces are unlikely for our Dockerfiles.
-            # Using -E '(^|/)Dockerfile$' to strictly match Dockerfiles
-            DOCKERFILES=$(git diff --name-only --diff-filter=AM origin/"$BASE_REF" "$SHA" | grep -E '(^|/)Dockerfile$' || true)
+            CHANGED_FILES=$(git diff --name-only --diff-filter=AM origin/"$BASE_REF" "$SHA" || true)
           else
-            # Find all Dockerfiles for push to default branch
-            DOCKERFILES=$(find . -name Dockerfile)
+            if [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
+              CHANGED_FILES=$(git diff --name-only --diff-filter=AM "$BEFORE" "$SHA" || true)
+            else
+              CHANGED_FILES=$(git diff --name-only --diff-filter=AM HEAD~1 "$SHA" || true)
+            fi
+          fi
+
+          DOCKERFILES=""
+          if [ -n "$CHANGED_FILES" ]; then
+            for file in $CHANGED_FILES; do
+              dir=$(dirname "$file")
+              while [ "$dir" != "/" ]; do
+                if [ -f "$dir/Dockerfile" ]; then
+                  DOCKERFILES="$DOCKERFILES $dir/Dockerfile"
+                  break
+                fi
+                if [ "$dir" = "." ]; then
+                  break
+                fi
+                dir=$(dirname "$dir")
+              done
+            done
+            DOCKERFILES=$(echo "$DOCKERFILES" | tr ' ' '\n' | sort -u | grep -v '^$' || true)
           fi
 
           if [ -z "$DOCKERFILES" ]; then
