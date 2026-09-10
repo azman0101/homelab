@@ -16,6 +16,7 @@ This image is:
 - 🔏 **Signed with Sigstore/cosign** (keyless, OIDC-backed)
 - 🛡️ **SLSA provenance** embedded as OCI attestation
 - 🔬 **Trivy-scanned** on every build — SARIF results in GitHub Security tab
+- 🧪 **Container Structure Tested** — verified image metadata, entrypoint, and essential files
 
 ## Verify the signature
 
@@ -39,4 +40,10 @@ cosign verify-attestation \
 
 ```bash
 trivy image ghcr.io/${GITHUB_REPOSITORY_OWNER}/home-assistant:latest
+```
+
+## Container structure tests
+
+```bash
+container-structure-test test --image ghcr.io/${GITHUB_REPOSITORY_OWNER}/home-assistant:latest --config home-assistant/cst.yaml
 ```
