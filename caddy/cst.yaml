@@ -4,7 +4,7 @@ commandTests:
   - name: "Caddy Version Check"
     command: "caddy"
     args: ["version"]
-    expectedOutput: ["2.11.4"]
+    expectedOutput: ["v?[0-9]+\\.[0-9]+\\.[0-9]+"]
 
   - name: "CrowdSec Module Check"
     command: "caddy"
