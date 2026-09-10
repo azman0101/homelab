@@ -87,8 +87,12 @@ jobs:
 
       - name: Run Container Structure Tests
         run: |
-          go install github.com/GoogleContainerTools/container-structure-test/cmd/container-structure-test@v1.16.0
-          "$(go env GOPATH)/bin/container-structure-test" test \
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD":/workspace \
+            -w /workspace \
+            gcr.io/gcp-runtimes/container-structure-test:v1.16.0 \
+            test \
             --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }} \
             --config caddy/cst.yaml
 
