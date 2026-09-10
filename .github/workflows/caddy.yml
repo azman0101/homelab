@@ -86,14 +86,17 @@ jobs:
           provenance: true
 
       - name: Run Container Structure Tests
+        env:
+          IMAGE_REF: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
         run: |
+          docker pull "${IMAGE_REF}"
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v "$PWD":/workspace \
             -w /workspace \
             gcr.io/gcp-runtimes/container-structure-test:v1.16.0 \
             test \
-            --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }} \
+            --image "${IMAGE_REF}" \
             --config caddy/cst.yaml
 
       - name: Run Trivy vulnerability scanner
