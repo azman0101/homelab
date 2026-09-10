@@ -85,6 +85,13 @@ jobs:
           sbom: true
           provenance: true
 
+      - name: Run Container Structure Tests
+        run: |
+          curl -LO https://storage.googleapis.com/container-structure-test/v1.16.0/container-structure-test-linux-amd64
+          chmod +x container-structure-test-linux-amd64
+          sudo mv container-structure-test-linux-amd64 /usr/local/bin/container-structure-test
+          container-structure-test test --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }} --config home-assistant/cst.yaml
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:

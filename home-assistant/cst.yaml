@@ -1,0 +1,39 @@
+schemaVersion: "2.0.0"
+
+metadataTest:
+  entrypoint: ["/init"]
+  workdir: "/config"
+  envVars:
+    - key: "LANG"
+      value: "C.UTF-8"
+    - key: "S6_BEHAVIOUR_IF_STAGE2_FAILS"
+      value: "2"
+    - key: "UV_SYSTEM_PYTHON"
+      value: "true"
+  labels:
+    - key: "io.hass.type"
+      value: "core"
+    - key: "io.hass.version"
+      value: "2026.9.1"
+    - key: "org.opencontainers.image.title"
+      value: "Home Assistant"
+
+commandTests:
+  - name: "Python Version Check"
+    command: "python3"
+    args: ["--version"]
+    expectedOutput: ["Python 3.*"]
+
+  - name: "Home Assistant Version Check"
+    command: "hass"
+    args: ["--version"]
+    expectedOutput: ["2026.9.1"]
+
+fileExistenceTests:
+  - name: "Check entrypoint binary"
+    path: "/init"
+    shouldExist: true
+
+  - name: "Check config directory"
+    path: "/config"
+    shouldExist: true
