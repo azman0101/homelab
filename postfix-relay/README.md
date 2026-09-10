@@ -5,7 +5,7 @@ Postfix relay - lightweight mail relay
 ## Upstream image
 
 ```
-mwader/postfix-relay:1.2.16@sha256:6beb9f9c77e8fe73192e4c7c543be639444083ac76eb265ee35729755d70a8e4
+mwader/postfix-relay:1.2.17@sha256:3ff7e7cb535f17570faabd9df3036ea65e69e3507c491e4ff8938189225a3382
 ```
 
 ## Supply chain security

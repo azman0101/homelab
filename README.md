@@ -20,7 +20,7 @@ Every image in this repository is:
 | [crowdsec](./crowdsec) | CrowdSec - collaborative security engine | v1.8.1 |
 | [authelia](./authelia) | Authelia - open-source authentication and authorization server | 4.39.24 |
 | [redis](./redis) | Redis in-memory data store | 8.10.1-alpine |
-| [postfix-relay](./postfix-relay) | Postfix relay - lightweight mail relay | 1.2.16 |
+| [postfix-relay](./postfix-relay) | Postfix relay - lightweight mail relay | 1.2.17 |
 | [pihole](./pihole) | Pi-hole - network-wide ad blocking | 2026.07.2 |
 | [uptime-kuma](./uptime-kuma) | Uptime Kuma - Self-hosted monitoring tool | 2.5.3 |
 | [influxdb](./influxdb) | InfluxDB - Open-source time-series database | 2.9.1-alpine |
