@@ -9,7 +9,7 @@ commandTests:
   - name: "CrowdSec Module Check"
     command: "caddy"
     args: ["list-modules"]
-    expectedOutput: [".*crowdsec.*"]
+    expectedOutput: ["http.handlers.crowdsec"]
 
   - name: "Caddyfile Validation"
     command: "caddy"
