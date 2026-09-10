@@ -1,0 +1,27 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "mosquitto binary exists in PATH"
+    command: "which"
+    args: ["mosquitto"]
+    expectedOutput: ["/usr/sbin/mosquitto"]
+
+fileExistenceTests:
+  - name: "mosquitto configuration directory exists"
+    path: "/mosquitto/config"
+    shouldExist: true
+    permissions: "drwxr-xr-x"
+  - name: "mosquitto entrypoint script exists"
+    path: "/docker-entrypoint.sh"
+    shouldExist: true
+
+fileContentTests:
+  - name: "mosquitto entrypoint script executes mosquitto"
+    path: "/docker-entrypoint.sh"
+    expectedContents: ["mosquitto"]
+
+metadataTest:
+  exposedPorts: ["1883"]
+  entrypoint: ["/docker-entrypoint.sh"]
+  cmd: ["/usr/sbin/mosquitto", "-c", "/mosquitto/config/mosquitto.conf"]
+  volumes: ["/mosquitto/data", "/mosquitto/log"]

@@ -73,6 +73,20 @@ jobs:
             type=raw,value=latest
             type=sha,prefix=sha-
 
+      - name: Build Docker image locally
+        id: build-local
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.1
+        with:
+          context: ./mosquitto
+          load: true
+          tags: mosquitto:test
+
+      - name: Run Container Structure Tests
+        uses: hread/container-structure-test-action@v5.4.0
+        with:
+          image: mosquitto:test
+          config: mosquitto/container-structure-test.yml
+
       - name: Build and push Docker image
         id: build
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.1
