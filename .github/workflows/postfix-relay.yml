@@ -34,7 +34,7 @@ jobs:
           SOCKET_SECURITY_API_KEY: ${{ secrets.SOCKET_SECURITY_API_KEY }}
         run: |
           if [ -n "$SOCKET_SECURITY_API_KEY" ]; then
-            npx -y @socketsecurity/cli scan ./postfix-relay || true
+            npx -y @socketsecurity/cli@1.1.170 scan ./postfix-relay || true
           else
             echo "No Socket API key provided, skipping behavioral scan."
           fi
