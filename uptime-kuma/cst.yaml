@@ -1,0 +1,21 @@
+schemaVersion: '2.0.0'
+
+metadataTest:
+  envVars:
+    - key: UPTIME_KUMA_IS_CONTAINER
+      value: "1"
+    - key: UPTIME_KUMA_ENABLE_EMBEDDED_MARIADB
+      value: "1"
+  exposedPorts:
+    - "3001"
+  entrypoint: ["/usr/bin/dumb-init", "--"]
+  cmd: ["node", "server/server.js"]
+  workdir: "/app"
+
+fileExistenceTests:
+  - name: 'App Directory'
+    path: '/app'
+    shouldExist: true
+  - name: 'Server script'
+    path: '/app/server/server.js'
+    shouldExist: true
