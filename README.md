@@ -21,7 +21,7 @@ Every image in this repository is:
 | [authelia](./authelia) | Authelia - open-source authentication and authorization server | 4.39.23 |
 | [redis](./redis) | Redis in-memory data store | 8.8.0-alpine |
 | [postfix-relay](./postfix-relay) | Postfix relay - lightweight mail relay | 1.2.16 |
-| [pihole](./pihole) | Pi-hole - network-wide ad blocking | 2026.06.0 |
+| [pihole](./pihole) | Pi-hole - network-wide ad blocking | 2026.07.2 |
 | [uptime-kuma](./uptime-kuma) | Uptime Kuma - Self-hosted monitoring tool | 2.5.3 |
 | [influxdb](./influxdb) | InfluxDB - Open-source time-series database | 2.9.1-alpine |
 
