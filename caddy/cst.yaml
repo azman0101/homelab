@@ -1,0 +1,25 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "Caddy Version Check"
+    command: "caddy"
+    args: ["version"]
+    expectedOutput: ["2.11.4"]
+
+  - name: "CrowdSec Module Check"
+    command: "caddy"
+    args: ["list-modules"]
+    expectedOutput: [".*crowdsec.*"]
+
+  - name: "Caddyfile Validation"
+    command: "caddy"
+    args: ["validate", "--adapter", "caddyfile", "--config", "/etc/caddy/Caddyfile"]
+
+fileExistenceTests:
+  - name: "Caddy Binary Exists"
+    path: "/usr/bin/caddy"
+    shouldExist: true
+
+  - name: "Caddyfile Exists"
+    path: "/etc/caddy/Caddyfile"
+    shouldExist: true
