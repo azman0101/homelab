@@ -15,7 +15,7 @@ Every image in this repository is:
 |--- |---|--- |
 | [home-assistant](./home-assistant) | Home Assistant - Open source home automation | 2026.9.1 |
 | [mosquitto](./mosquitto) | Eclipse Mosquitto MQTT broker | 2.1.2-alpine |
-| [frigate](./frigate) | Frigate NVR - Network Video Recorder with local AI object detection | 0.17.2 |
+| [frigate](./frigate) | Frigate NVR - Network Video Recorder with local AI object detection | 0.18.0 |
 | [caddy](./caddy) | Caddy web server with CrowdSec bouncer | 2.11.4 |
 | [crowdsec](./crowdsec) | CrowdSec - collaborative security engine | v1.8.1 |
 | [authelia](./authelia) | Authelia - open-source authentication and authorization server | 4.39.25 |
