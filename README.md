@@ -13,7 +13,7 @@ Every image in this repository is:
 
 | Image  | Description | Version  |
 |--- |---|--- |
-| [home-assistant](./home-assistant) | Home Assistant - Open source home automation | 2026.9.1 |
+| [home-assistant](./home-assistant) | Home Assistant - Open source home automation | 2026.9.2 |
 | [mosquitto](./mosquitto) | Eclipse Mosquitto MQTT broker | 2.1.2-alpine |
 | [frigate](./frigate) | Frigate NVR - Network Video Recorder with local AI object detection | 0.18.0 |
 | [caddy](./caddy) | Caddy web server with CrowdSec bouncer | 2.11.4 |
