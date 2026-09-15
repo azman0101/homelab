@@ -14,7 +14,7 @@ metadataTest:
     - key: "io.hass.type"
       value: "core"
     - key: "io.hass.version"
-      value: "2026.9.1"
+      value: "2026.9.2"
     - key: "org.opencontainers.image.title"
       value: "Home Assistant"
 
@@ -27,7 +27,7 @@ commandTests:
   - name: "Home Assistant Version Check"
     command: "hass"
     args: ["--version"]
-    expectedOutput: ["2026.9.1"]
+    expectedOutput: ["2026.9.2"]
 
 fileExistenceTests:
   - name: "Check entrypoint binary"
