@@ -1,5 +1,5 @@
 # Upstream image pinned to immutable digest for supply chain security
-FROM authelia/authelia:4.39.25@sha256:a039d87fb842f0af4f83c03434f5fb6ec45d4b46e86b8b3ac571cc104bbe6e6d
+FROM authelia/authelia:4.39.27@sha256:40005803cd4e2eaeea4418517e9e9c7f515b55b31071a02829341ca2e50ca7c0
 
 LABEL org.opencontainers.image.description="Authelia - open-source authentication and authorization server"
 
