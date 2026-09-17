@@ -55,7 +55,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
@@ -86,7 +86,8 @@ jobs:
         env:
           IMAGE_REF: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
           CST_IMAGE_TAG: gcr.io/gcp-runtimes/container-structure-test:v1.16.0
-          CST_BINARY_SHA256: 9cc21a2dbe6f72a6a10195cc3b6fd1db5eb76c4aaeac09b42b06a6f017f4de4a # linux/amd64 binary checksum
+          # Update CST_BINARY_SHA256 whenever CST_IMAGE_TAG is bumped (linux/amd64 digest of the binary inside the image)
+          CST_BINARY_SHA256: 9cc21a2dbe6f72a6a10195cc3b6fd1db5eb76c4aaeac09b42b06a6f017f4de4a # linux/amd64 binary checksum for v1.16.0
           SERVICE_NAME: ${{ inputs.service_name }}
         run: |
           CST_CONFIG=""

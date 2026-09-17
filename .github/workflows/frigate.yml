@@ -9,7 +9,7 @@ on:
     tags:
       - 'frigate/v*'
   schedule:
-    - cron: '0 3 * * 1'   # Weekly Monday 03:00 UTC to catch upstream CVE fixes
+    - cron: '0 9 * * 1'   # Weekly Monday 09:00 UTC to catch upstream CVE fixes
   workflow_dispatch:
 
 jobs:

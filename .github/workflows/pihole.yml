@@ -9,7 +9,7 @@ on:
     tags:
       - 'pihole/v*'
   schedule:
-    - cron: '0 3 * * 1'   # Weekly Monday 03:00 UTC to catch upstream CVE fixes
+    - cron: '0 17 * * 1'   # Weekly Monday 17:00 UTC to catch upstream CVE fixes
   workflow_dispatch:
 
 jobs:
