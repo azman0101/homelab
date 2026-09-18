@@ -70,8 +70,6 @@ jobs:
           tags: |
             type=raw,value=${{ steps.version.outputs.version }}
             type=ref,event=tag
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest
             type=sha,prefix=sha-
 
@@ -135,6 +133,7 @@ jobs:
           fi
 
       - name: Run Trivy vulnerability scanner
+        if: ${{ always() }}
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
@@ -146,7 +145,7 @@ jobs:
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
-        if: always()
+        if: ${{ always() && hashFiles('trivy-results.sarif') != '' }}
         with:
           sarif_file: trivy-results.sarif
           category: ${{ inputs.service_name }}
