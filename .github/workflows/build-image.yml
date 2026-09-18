@@ -72,6 +72,8 @@ jobs:
             type=match,pattern=.*\/(v.*),group=1
             type=raw,value=latest
             type=sha,prefix=sha-
+          labels: |
+            ${{ inputs.image_title != '' && format('org.opencontainers.image.title={0}', inputs.image_title) || '' }}
 
       - name: Compose image labels
         id: compose-labels
