@@ -7,6 +7,11 @@ on:
         required: true
         type: string
         description: 'The name of the service/directory (e.g. authelia, caddy)'
+      image_title:
+        required: false
+        type: string
+        default: ''
+        description: 'Optional OCI image title override'
 
 env:
   REGISTRY: ghcr.io
@@ -70,6 +75,23 @@ jobs:
             type=raw,value=latest
             type=sha,prefix=sha-
 
+      - name: Compose image labels
+        id: compose-labels
+        env:
+          META_LABELS: ${{ steps.meta.outputs.labels }}
+          IMAGE_TITLE: ${{ inputs.image_title }}
+        run: |
+          {
+            echo "labels<<EOF"
+            if [ -n "$IMAGE_TITLE" ]; then
+              printf '%s\n' "$META_LABELS" | sed '/^org.opencontainers.image.title=/d'
+              printf 'org.opencontainers.image.title=%s\n' "$IMAGE_TITLE"
+            else
+              printf '%s\n' "$META_LABELS"
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Build and push Docker image
         id: build
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.1
@@ -78,7 +100,7 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          labels: ${{ steps.compose-labels.outputs.labels }}
           sbom: true
           provenance: true
 
