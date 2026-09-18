@@ -148,6 +148,52 @@ jobs:
           done
           cosign sign --yes "${images[@]}"
 
+      - name: Update release with published image details
+        if: github.ref_type == 'tag'
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          REF_NAME: ${{ github.ref_name }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_TAG="$REF_NAME"
+          RELEASE_BODY_FILE="$(mktemp)"
+          RELEASE_BODY_MARKER="<!-- container-image-details -->"
+          IMAGE_TAG="${RELEASE_TAG#*/}"
+          IMAGE_REF="${IMAGE_NAME}@${DIGEST}"
+
+          if ! gh release view "$RELEASE_TAG" --json body -q .body > "$RELEASE_BODY_FILE"; then
+            echo "Release $RELEASE_TAG not found, skipping release update."
+            exit 0
+          fi
+
+          python - "$RELEASE_BODY_FILE" "$RELEASE_BODY_MARKER" "$IMAGE_NAME" "$IMAGE_TAG" "$IMAGE_REF" <<'PY'
+          import pathlib
+          import sys
+
+          body_path = pathlib.Path(sys.argv[1])
+          marker = sys.argv[2]
+          image_name = sys.argv[3]
+          image_tag = sys.argv[4]
+          image_ref = sys.argv[5]
+
+          body = body_path.read_text().rstrip()
+          section = (
+              f"{marker}\n"
+              "## Container image\n\n"
+              f"- Published image: `{image_name}:{image_tag}`\n"
+              f"- Digest: `{image_ref}`\n"
+          )
+
+          if marker in body:
+              body = body.split(marker, 1)[0].rstrip()
+
+          body = f"{body}\n\n{section}\n"
+          body_path.write_text(body)
+          PY
+
+          gh release edit "$RELEASE_TAG" --notes-file "$RELEASE_BODY_FILE"
+
       - name: Verify SLSA provenance (BuildKit attestation)
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
