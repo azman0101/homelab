@@ -17,4 +17,5 @@ jobs:
     uses: ./.github/workflows/build-image.yml
     with:
       service_name: home-assistant
+      image_title: Home Assistant
     secrets: inherit
