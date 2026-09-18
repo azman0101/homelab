@@ -63,9 +63,8 @@ jobs:
               # Update root README.md version column
               SRV="$SERVICE" RAW_VER="$RAW_VERSION" perl -i -pe '
                 $s = $ENV{SRV}; $v = $ENV{RAW_VER};
-                if (/^\|\s*\[\Q$s\E\]\(\.\/\Q$s\E\)\s*\|/) {
-                  @p = split(/\s*\|\s*/, $_);
-                  $_ = "| $p[1] | $p[2] | $v |\n";
+                if (/^\|\s*(!\[[^\]]*\]\([^)]+\))\s*\|\s*(\[\Q$s\E\]\(\.\/\Q$s\E\))\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|$/) {
+                  $_ = "| $1 | $2 | $3 | $v |\n";
                 }
               ' README.md
 
