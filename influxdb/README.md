@@ -5,7 +5,7 @@ InfluxDB time-series database
 ## Upstream image
 
 ```
-influxdb:2.9.1-alpine@sha256:1cb8fa92ff9d13518d8198dae872b7ea523757a03c655d12a67175b1ab7a72f0
+influxdb:2.9.1-alpine@sha256:38e81dd3af50d085704d970815210dae3d094c5a8a70d7a8f336716889022ea2
 ```
 
 ## Supply chain security
