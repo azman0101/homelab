@@ -153,43 +153,62 @@ jobs:
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
           IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          IMAGE_TAG: ${{ steps.version.outputs.version }}
           REF_NAME: ${{ github.ref_name }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           RELEASE_TAG="$REF_NAME"
           RELEASE_BODY_FILE="$(mktemp)"
-          RELEASE_BODY_MARKER="<!-- container-image-details -->"
-          IMAGE_TAG="${RELEASE_TAG#*/}"
+          RELEASE_BODY_START_MARKER="<!-- homelab-container-image-details:start -->"
+          RELEASE_BODY_END_MARKER="<!-- homelab-container-image-details:end -->"
           IMAGE_REF="${IMAGE_NAME}@${DIGEST}"
+
+          if ! [[ "$RELEASE_TAG" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+            echo "Skipping release update for unexpected release tag: $RELEASE_TAG"
+            exit 0
+          fi
+
+          if ! [[ "$IMAGE_TAG" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "Skipping release update for unexpected image tag: $IMAGE_TAG"
+            exit 0
+          fi
 
           if ! gh release view "$RELEASE_TAG" --json body -q .body > "$RELEASE_BODY_FILE"; then
             echo "Release $RELEASE_TAG not found, skipping release update."
             exit 0
           fi
 
-          python - "$RELEASE_BODY_FILE" "$RELEASE_BODY_MARKER" "$IMAGE_NAME" "$IMAGE_TAG" "$IMAGE_REF" <<'PY'
+          python - "$RELEASE_BODY_FILE" "$RELEASE_BODY_START_MARKER" "$RELEASE_BODY_END_MARKER" "$IMAGE_NAME" "$IMAGE_TAG" "$IMAGE_REF" <<'PY'
           import pathlib
           import sys
 
           body_path = pathlib.Path(sys.argv[1])
-          marker = sys.argv[2]
-          image_name = sys.argv[3]
-          image_tag = sys.argv[4]
-          image_ref = sys.argv[5]
+          start_marker = sys.argv[2]
+          end_marker = sys.argv[3]
+          image_name = sys.argv[4]
+          image_tag = sys.argv[5]
+          image_ref = sys.argv[6]
 
           body = body_path.read_text().rstrip()
           section = (
-              f"{marker}\n"
-              "## Container image\n\n"
+              f"{start_marker}\n"
+              "### Container image\n\n"
               f"- Published image: `{image_name}:{image_tag}`\n"
-              f"- Digest: `{image_ref}`\n"
+              f"- Image reference: `{image_ref}`\n"
+              f"{end_marker}"
           )
 
-          if marker in body:
-              body = body.split(marker, 1)[0].rstrip()
+          start = body.find(start_marker)
+          end = body.find(end_marker, start + len(start_marker)) if start != -1 else -1
 
-          body = f"{body}\n\n{section}\n"
-          body_path.write_text(body)
+          if start != -1 and end != -1 and start < end:
+              prefix = body[:start].rstrip("\n")
+              suffix = body[end + len(end_marker):].lstrip("\n")
+              body = "\n\n".join(part for part in (prefix, section, suffix) if part).rstrip()
+          else:
+              body = f"{body}\n\n{section}" if body else section
+
+          body_path.write_text(body.rstrip() + "\n")
           PY
 
           gh release edit "$RELEASE_TAG" --notes-file "$RELEASE_BODY_FILE"
