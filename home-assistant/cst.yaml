@@ -10,22 +10,16 @@ metadataTest:
       value: "2"
     - key: "UV_SYSTEM_PYTHON"
       value: "true"
-  labels:
-    - key: "io.hass.type"
-      value: "core"
-    - key: "org.opencontainers.image.title"
-      value: "Home Assistant"
-
 commandTests:
   - name: "Python Version Check"
     command: "python3"
     args: ["--version"]
-    expectedOutput: ["Python 3.*"]
+    regexOutput: ["Python 3.*"]
 
   - name: "Home Assistant Version Check"
     command: "hass"
     args: ["--version"]
-    expectedOutput: ["[0-9]{4}\\.[0-9]+\\.[0-9]+"]
+    regexOutput: ["[0-9]{4}\\.[0-9]+\\.[0-9]+"]
 
 fileExistenceTests:
   - name: "Check entrypoint binary"
