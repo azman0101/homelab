@@ -12,6 +12,12 @@ on:
     - cron: '0 15 * * 1'   # Weekly Monday 15:00 UTC to catch upstream CVE fixes
   workflow_dispatch:
 
+permissions:
+  contents: write
+  packages: write
+  id-token: write          # keyless cosign OIDC signing
+  security-events: write   # upload Trivy SARIF to GitHub Security tab
+
 jobs:
   build-and-push:
     uses: ./.github/workflows/build-image.yml
