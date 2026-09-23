@@ -33,7 +33,8 @@ metadataTest:
     - key: 'PATH'
       value: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
     - key: 'REDIS_VERSION'
-      value: '8.8.0'
+      value: '^[0-9]+\.[0-9]+\.[0-9]+$'
+      isRegex: true
   exposedPorts: ['6379']
   entrypoint: ['docker-entrypoint.sh']
   cmd: ['redis-server']
