@@ -2,6 +2,8 @@ name: Build and Publish pihole
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'pihole/**'
       - '.github/workflows/pihole.yml'

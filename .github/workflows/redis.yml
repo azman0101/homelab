@@ -2,6 +2,8 @@ name: Build and Publish redis
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'redis/**'
       - '.github/workflows/redis.yml'

@@ -2,6 +2,8 @@ name: Build and Publish authelia
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'authelia/**'
       - '.github/workflows/authelia.yml'

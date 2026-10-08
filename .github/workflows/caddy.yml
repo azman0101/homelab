@@ -2,6 +2,8 @@ name: Build and Publish caddy
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'caddy/**'
       - '.github/workflows/caddy.yml'

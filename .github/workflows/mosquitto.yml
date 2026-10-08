@@ -2,6 +2,8 @@ name: Build and Publish mosquitto
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'mosquitto/**'
       - '.github/workflows/mosquitto.yml'
