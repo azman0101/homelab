@@ -13,7 +13,7 @@ Every image in this repository is:
 
 | Built & Published | Image | Description | Version | Pull reference (`tag@digest`) |
 |---|---|---|---|---|
-| ![published](https://img.shields.io/github/actions/workflow/status/azman0101/homelab/home-assistant.yml?branch=main&label=published) | [home-assistant](./home-assistant) | Home Assistant - Open source home automation | 2026.10.0 | _pending next build_ |
+| ![published](https://img.shields.io/github/actions/workflow/status/azman0101/homelab/home-assistant.yml?branch=main&label=published) | [home-assistant](./home-assistant) | Home Assistant - Open source home automation | 2026.10.0 | `ghcr.io/azman0101/home-assistant:v2026.10.0@sha256:b6864ff4496ea14bf795f5f6502788ef3dccd37523ee4858db472ac9017eac4b` |
 | ![published](https://img.shields.io/github/actions/workflow/status/azman0101/homelab/mosquitto.yml?branch=main&label=published) | [mosquitto](./mosquitto) | Eclipse Mosquitto MQTT broker | 2.1.2-alpine | `ghcr.io/azman0101/mosquitto:v2.1.2-alpine@sha256:f8c5ee73925b1953e30785187b3df3473388373b0bca5d72293271d29d7bb005` |
 | ![published](https://img.shields.io/github/actions/workflow/status/azman0101/homelab/frigate.yml?branch=main&label=published) | [frigate](./frigate) | Frigate NVR - Network Video Recorder with local AI object detection | 0.18.0 | `ghcr.io/azman0101/frigate:v0.18.0@sha256:5d1771cf6e9c147d0a2f1213d4a69827626b0ff31c84a373cf148547c82b36dd` |
 | ![published](https://img.shields.io/github/actions/workflow/status/azman0101/homelab/caddy.yml?branch=main&label=published) | [caddy](./caddy) | Caddy web server with CrowdSec bouncer | 2.11.6 | `ghcr.io/azman0101/caddy:v2.11.6@sha256:7c60fd6130c5d92f05d7fbd7004a8b9d3c163a583dbd75bcea7e2a30040005b5` |
