@@ -2,6 +2,8 @@ name: Build and Publish postfix-relay
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'postfix-relay/**'
       - '.github/workflows/postfix-relay.yml'

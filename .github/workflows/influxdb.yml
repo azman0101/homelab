@@ -2,6 +2,8 @@ name: Build and Publish influxdb
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'influxdb/**'
       - '.github/workflows/influxdb.yml'

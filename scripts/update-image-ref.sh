@@ -1,32 +1,60 @@
 #!/usr/bin/env bash
-# Update the "Pull reference" column of the root README.md for one service.
+# Maintain the image columns of the root README.md table:
+#   | badge | Image | Description | Published | Pending | Pull reference |
 #
-# Usage: scripts/update-image-ref.sh <service> <tag> <digest> [owner]
-#   e.g. scripts/update-image-ref.sh caddy v2.11.6 sha256:abc... azman0101
+#   Published       tag actually pushed to GHCR            (written by build-image.yml)
+#   Pending         tag declared in the Dockerfile but not yet published, or "—"
+#                                                          (written by release-on-bump.yml)
+#   Pull reference  `ghcr.io/<owner>/<image>:<tag>@sha256:<digest>` of the published tag
 #
-# Result: | ... | ... | ... | ... | `ghcr.io/<owner>/<service>:<tag>@<digest>` |
+# Usage:
+#   scripts/update-image-ref.sh published <service> <tag> <digest> [owner]
+#   scripts/update-image-ref.sh pending   <service> <tag>
 set -euo pipefail
 
-SERVICE="${1:?service name required}"
-TAG="${2:?tag required}"
-DIGEST="${3:?digest required}"
-OWNER="${4:-${GITHUB_REPOSITORY_OWNER:-azman0101}}"
 README="${README:-README.md}"
+MODE="${1:?mode required: published|pending}"
+SERVICE="${2:?service name required}"
+TAG="${3:?tag required}"
 
-if [[ ! "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
-  echo "Invalid digest: $DIGEST" >&2
-  exit 1
-fi
+case "$MODE" in
+  published)
+    DIGEST="${4:?digest required}"
+    OWNER="${5:-${GITHUB_REPOSITORY_OWNER:-azman0101}}"
+    if [[ ! "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+      echo "Invalid digest: $DIGEST" >&2
+      exit 1
+    fi
+    REF="ghcr.io/${OWNER,,}/${SERVICE}:${TAG}@${DIGEST}"
+    ;;
+  pending)
+    REF=""
+    ;;
+  *)
+    echo "Unknown mode: $MODE" >&2
+    exit 1
+    ;;
+esac
 
-REF="ghcr.io/${OWNER,,}/${SERVICE}:${TAG}@${DIGEST}"
-
-SRV="$SERVICE" REF="$REF" perl -i -pe '
-  $s = $ENV{SRV}; $r = $ENV{REF};
-  if (/^(\|\s*!\[[^\]]*\]\([^)]+\)\s*\|\s*\[\Q$s\E\]\(\.\/\Q$s\E\)\s*\|[^|]*\|[^|]*\|)[^|]*\|\s*$/) {
-    $_ = "$1 `$r` |\n";
+MODE="$MODE" SRV="$SERVICE" TAG="$TAG" REF="$REF" perl -i -pe '
+  BEGIN { $found = 0 }
+  $s = $ENV{SRV};
+  if (/^(\|\s*!\[[^\]]*\]\([^)]+\)\s*\|\s*\[\Q$s\E\]\(\.\/\Q$s\E\)\s*\|[^|]*\|)([^|]*)\|([^|]*)\|([^|]*)\|\s*$/) {
+    ($head, $pub, $pend, $ref) = ($1, $2, $3, $4);
+    $pub =~ s/^\s+|\s+$//g;
+    $pend =~ s/^\s+|\s+$//g;
+    $ref =~ s/^\s+|\s+$//g;
+    if ($ENV{MODE} eq "published") {
+      $pub = $ENV{TAG};
+      $pend = "—" if $pend eq $ENV{TAG};
+      $_ = "$head $pub | $pend | `$ENV{REF}` |\n";
+    } else {
+      $pend = ($pub eq $ENV{TAG}) ? "—" : $ENV{TAG};
+      $_ = "$head $pub | $pend | $ref |\n";
+    }
     $found = 1;
   }
   END { exit($found ? 0 : 1) }
 ' "$README" || { echo "Row for '$SERVICE' not found in $README" >&2; exit 1; }
 
-echo "$REF"
+echo "$MODE $SERVICE $TAG"

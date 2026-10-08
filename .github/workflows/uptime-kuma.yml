@@ -2,6 +2,8 @@ name: Build and Publish uptime-kuma
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'uptime-kuma/**'
       - '.github/workflows/uptime-kuma.yml'

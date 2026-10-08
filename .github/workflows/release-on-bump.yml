@@ -59,15 +59,9 @@ jobs:
                 UPSTREAM_IMG="$UPSTREAM_IMAGE" perl -i -0777 -pe 's/(## Upstream image\s*\n\n```\n).*?(\n```)/$1$ENV{UPSTREAM_IMG}$2/s' "$SERVICE_README"
               fi
 
-              # Update root README.md version column.
-              # The pull reference (tag@digest) of the previous version is stale now:
-              # reset it, build-image.yml fills it once the new image is published.
-              SRV="$SERVICE" RAW_VER="$RAW_VERSION" perl -i -pe '
-                $s = $ENV{SRV}; $v = $ENV{RAW_VER};
-                if (/^\|\s*(!\[[^\]]*\]\([^)]+\))\s*\|\s*(\[\Q$s\E\]\(\.\/\Q$s\E\))\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]*?)\s*\|$/) {
-                  $_ = "| $1 | $2 | $3 | $v | _pending next build_ |\n";
-                }
-              ' README.md
+              # Flag the new version as pending in the root README.md table.
+              # build-image.yml moves it to "Published" (with its digest) once the image is pushed.
+              scripts/update-image-ref.sh pending "$SERVICE" "$VERSION"
 
               PREV_TAG=$(git tag -l "$SERVICE/*" --sort=-v:refname | grep -v "^$TAG$" | head -n 1 || true)
 
@@ -94,5 +88,13 @@ jobs:
           if ! git diff --quiet README.md */README.md; then
             git add README.md */README.md
             git commit -m "docs: update README files for released versions"
-            git push origin main
+            # build-image.yml pushes README updates to main too: rebase and retry on rejection
+            for attempt in 1 2 3 4 5; do
+              git push origin main && break
+              if [ "$attempt" = 5 ]; then
+                echo "Could not push README updates after 5 attempts" >&2
+                exit 1
+              fi
+              git pull --rebase origin main
+            done
           fi
