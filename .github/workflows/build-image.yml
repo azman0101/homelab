@@ -182,3 +182,34 @@ jobs:
           docker buildx imagetools inspect \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${DIGEST} \
             --format '{{ json .Provenance }}'
+
+      - name: Update pull reference (tag@digest) in README
+        if: ${{ success() && steps.build.outputs.digest != '' && github.ref == 'refs/heads/main' }}
+        env:
+          SERVICE_NAME: ${{ inputs.service_name }}
+          VERSION: ${{ steps.version.outputs.version }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Other image builds (and release-on-bump) push to main too: re-apply on top of
+          # the latest main and retry on conflict instead of failing the build.
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            scripts/update-image-ref.sh "${SERVICE_NAME}" "${VERSION}" "${DIGEST}"
+            if git diff --quiet README.md; then
+              echo "README already up to date."
+              exit 0
+            fi
+            git add README.md
+            git commit -m "docs: update ${SERVICE_NAME} image reference to ${VERSION}@${DIGEST}"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push rejected (attempt ${attempt}), retrying..."
+            sleep $((RANDOM % 10 + 2))
+          done
+          echo "Could not update README after 5 attempts" >&2
+          exit 1

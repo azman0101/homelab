@@ -59,11 +59,13 @@ jobs:
                 UPSTREAM_IMG="$UPSTREAM_IMAGE" perl -i -0777 -pe 's/(## Upstream image\s*\n\n```\n).*?(\n```)/$1$ENV{UPSTREAM_IMG}$2/s' "$SERVICE_README"
               fi
 
-              # Update root README.md version column
+              # Update root README.md version column.
+              # The pull reference (tag@digest) of the previous version is stale now:
+              # reset it, build-image.yml fills it once the new image is published.
               SRV="$SERVICE" RAW_VER="$RAW_VERSION" perl -i -pe '
                 $s = $ENV{SRV}; $v = $ENV{RAW_VER};
-                if (/^\|\s*(!\[[^\]]*\]\([^)]+\))\s*\|\s*(\[\Q$s\E\]\(\.\/\Q$s\E\))\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|$/) {
-                  $_ = "| $1 | $2 | $3 | $v |\n";
+                if (/^\|\s*(!\[[^\]]*\]\([^)]+\))\s*\|\s*(\[\Q$s\E\]\(\.\/\Q$s\E\))\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]*?)\s*\|$/) {
+                  $_ = "| $1 | $2 | $3 | $v | _pending next build_ |\n";
                 }
               ' README.md
 
