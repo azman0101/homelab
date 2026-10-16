@@ -1,5 +1,5 @@
 # Upstream image pinned to immutable digest for supply chain security
-FROM ghcr.io/blakeblackshear/frigate:0.18.1@sha256:ae4ee2505e4dba6313b02bf5e8eea6c35fb1119f7087b9f684082be0a9fa0a71
+FROM ghcr.io/blakeblackshear/frigate:0.18.2@sha256:fd60f99ffd4eb6c42360ed4e14953e270586f239309ab3983e55b2e97ffac09a
 
 LABEL org.opencontainers.image.description="Frigate NVR - Network Video Recorder with local AI object detection"
 
