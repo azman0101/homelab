@@ -1,0 +1,13 @@
+schemaVersion: 2.0.0
+commandTests:
+- name: Upstream version
+  command: python
+  args:
+  - -c
+  - from changedetectionio import __version__; print(__version__)
+  expectedOutput:
+  - 0.60.9
+fileExistenceTests:
+- name: Upstream entrypoint or application
+  path: /app/changedetection.py
+  shouldExist: true

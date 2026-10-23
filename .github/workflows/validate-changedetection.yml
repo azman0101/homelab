@@ -1,0 +1,38 @@
+name: Validate changedetection PR
+'on':
+  pull_request:
+    paths:
+    - changedetection/**
+    - .github/workflows/validate-changedetection.yml
+    - .github/workflows/changedetection.yml
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - name: Build pinned upstream image
+      run: docker build --pull --tag local/changedetection:test ./changedetection
+    - name: Verify upstream version
+      run: docker run --rm --entrypoint python local/changedetection:test '-c' 'from changedetectionio import __version__;
+        print(__version__)'
+    - name: Report fixable high and critical vulnerabilities
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+      with:
+        image-ref: local/changedetection:test
+        format: json
+        output: changedetection-trivy.json
+        severity: CRITICAL,HIGH
+        ignore-unfixed: true
+        exit-code: '0'
+      if: ${{ !cancelled() }}
+    - name: Summarize security gate
+      if: always()
+      run: "python3 - <<'PYSCAN'\nimport json,pathlib,collections\np=pathlib.Path('changedetection-trivy.json')\n\
+        if not p.exists():\n    print('Security report unavailable; deployment remains blocked')\nelse:\n    data=json.loads(p.read_text())\n\
+        \    findings=[v for r in data.get('Results',[]) for v in r.get('Vulnerabilities',[])]\n    print('FIXABLE_SECURITY_FINDINGS',\
+        \ dict(collections.Counter(v['Severity'] for v in findings)))\n    for v in findings[:20]:\n        print(v['VulnerabilityID'],v['PkgName'],v['InstalledVersion'],'->',v.get('FixedVersion',''))\n\
+        PYSCAN"
