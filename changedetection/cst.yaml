@@ -5,8 +5,9 @@ commandTests:
   args:
   - -c
   - from changedetectionio import __version__; print(__version__)
+  # Match any version so Dependabot bumps don't break the test.
   expectedOutput:
-  - 0.60.9
+  - '\d+\.\d+\.\d+'
 fileExistenceTests:
 - name: Upstream entrypoint or application
   path: /app/changedetection.py

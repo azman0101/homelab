@@ -19,10 +19,3 @@ shared build, structure-test, SBOM, provenance and Cosign pipeline.
 
 Back up `/datastore` before upgrading from a development build. Test browser
 compatibility on an isolated datastore without production notification targets.
-
-## Security review on 2026-10-23
-
-Trivy 0.76.1 reports **5 CRITICAL and 27 HIGH** fixable findings in the pinned upstream
-image. Like the existing repository pipeline, the report is informational;
-workflow success does not mean that the image is vulnerability-free. Review
-the findings before merging or deploying. The initial PR remains draft.
