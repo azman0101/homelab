@@ -21,8 +21,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # List of services to check
-          SERVICES=("authelia" "caddy" "crowdsec" "frigate" "home-assistant" "influxdb" "mosquitto" "pihole" "postfix-relay" "redis" "uptime-kuma" "portainer-ce")
+          # Every top-level directory with a Dockerfile is a service
+          SERVICES=()
+          for f in */Dockerfile; do
+            SERVICES+=("${f%/Dockerfile}")
+          done
 
           for SERVICE in "${SERVICES[@]}"; do
             DOCKERFILE="$SERVICE/Dockerfile"
