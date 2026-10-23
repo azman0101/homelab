@@ -1,0 +1,12 @@
+schemaVersion: 2.0.0
+commandTests:
+- name: Upstream version
+  command: /usr/bin/chromium-browser
+  args:
+  - --version
+  expectedOutput:
+  - Chromium 119
+fileExistenceTests:
+- name: Upstream entrypoint or application
+  path: /usr/local/bin/entrypoint.sh
+  shouldExist: true

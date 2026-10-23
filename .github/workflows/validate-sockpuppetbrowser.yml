@@ -1,0 +1,51 @@
+name: Validate sockpuppetbrowser PR
+'on':
+  pull_request:
+    paths:
+    - sockpuppetbrowser/**
+    - .github/workflows/validate-sockpuppetbrowser.yml
+    - .github/workflows/sockpuppetbrowser.yml
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - name: Build pinned upstream image
+      run: docker build --pull --tag local/sockpuppetbrowser:test ./sockpuppetbrowser
+    - name: Verify upstream version
+      run: docker run --rm --entrypoint /usr/bin/chromium-browser local/sockpuppetbrowser:test '--version'
+    - name: Check changedetection 0.60.9 compatibility without external network
+      run: 'docker network create --internal image-smoke-test
+
+        docker run -d --name browser --network image-smoke-test --cpus 1 --memory 1g --shm-size 256m --cap-add SYS_ADMIN
+        -e MAX_CONCURRENT_CHROME_PROCESSES=1 local/sockpuppetbrowser:test
+
+        docker run --rm --network image-smoke-test --cpus 1 --memory 1g -v "$PWD/sockpuppetbrowser/tests/smoke.py:/smoke.py:ro"
+        --entrypoint python ghcr.io/dgtlmoon/changedetection.io:0.60.9@sha256:04eaae7915bad711160cb15abe160f6d3fabe98bbbd658509d4b7a654000fb2d
+        -u /smoke.py'
+    - name: Clean isolated browser test
+      if: always()
+      run: 'docker rm -f browser 2>/dev/null || true
+
+        docker network rm image-smoke-test 2>/dev/null || true'
+    - name: Reject fixable high and critical vulnerabilities
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+      with:
+        image-ref: local/sockpuppetbrowser:test
+        format: json
+        output: sockpuppetbrowser-trivy.json
+        severity: CRITICAL,HIGH
+        ignore-unfixed: true
+        exit-code: '1'
+      if: ${{ !cancelled() }}
+    - name: Summarize security gate
+      if: always()
+      run: "python3 - <<'PYSCAN'\nimport json,pathlib,collections\np=pathlib.Path('sockpuppetbrowser-trivy.json')\n\
+        if not p.exists():\n    print('Security report unavailable; deployment remains blocked')\nelse:\n    data=json.loads(p.read_text())\n\
+        \    findings=[v for r in data.get('Results',[]) for v in r.get('Vulnerabilities',[])]\n    print('FIXABLE_SECURITY_FINDINGS',\
+        \ dict(collections.Counter(v['Severity'] for v in findings)))\n    for v in findings[:20]:\n        print(v['VulnerabilityID'],v['PkgName'],v['InstalledVersion'],'->',v.get('FixedVersion',''))\n\
+        PYSCAN"
