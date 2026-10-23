@@ -4,8 +4,9 @@ commandTests:
   command: /portainer
   args:
   - --version
-  expectedOutput:
-  - 2.45.3
+  # Portainer prints its version on stderr; match any version so Dependabot bumps don't break the test.
+  expectedError:
+  - '\d+\.\d+\.\d+'
 fileExistenceTests:
 - name: Upstream entrypoint or application
   path: /portainer
