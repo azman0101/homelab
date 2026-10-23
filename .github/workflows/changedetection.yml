@@ -1,0 +1,28 @@
+name: Build and Publish changedetection
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'changedetection/**'
+      - '.github/workflows/changedetection.yml'
+      - '.github/workflows/build-image.yml'
+    tags:
+      - 'changedetection/v*'
+  schedule:
+    - cron: '0 3 * * 2'   # Weekly Tuesday to catch upstream CVE fixes
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write          # keyless cosign OIDC signing
+  security-events: write   # upload Trivy SARIF to GitHub Security tab
+
+jobs:
+  build-and-push:
+    uses: ./.github/workflows/build-image.yml
+    with:
+      service_name: changedetection
+    secrets: inherit

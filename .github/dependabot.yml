@@ -71,3 +71,8 @@ updates:
     directory: "/portainer-ce"
     schedule:
       interval: "daily"
+
+  - package-ecosystem: "docker"
+    directory: "/changedetection"
+    schedule:
+      interval: "daily"

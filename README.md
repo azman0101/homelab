@@ -25,6 +25,7 @@ Every image in this repository is:
 | ![published](https://img.shields.io/github/actions/workflow/status/azman0101/homelab/uptime-kuma.yml?branch=main&label=published) | [uptime-kuma](./uptime-kuma) | Uptime Kuma - Self-hosted monitoring tool | v2.5.6 | — | `ghcr.io/azman0101/uptime-kuma:v2.5.6@sha256:0fd404f0567bad8fd2de861442f70646251c6293ba3f4f13bba449d90218f1d5` |
 | ![published](https://img.shields.io/github/actions/workflow/status/azman0101/homelab/influxdb.yml?branch=main&label=published) | [influxdb](./influxdb) | InfluxDB - Open-source time-series database | v2.9.1-alpine | — | `ghcr.io/azman0101/influxdb:v2.9.1-alpine@sha256:7daeb089d5358658cc5d85d0e13e8b1a3988f6ab5f65ac1357c689263cc4f68b` |
 | ![published](https://img.shields.io/github/actions/workflow/status/azman0101/homelab/portainer-ce.yml?branch=main&label=published) | [portainer-ce](./portainer-ce) | Portainer Community Edition | v2.45.3 | — | `ghcr.io/azman0101/portainer-ce:v2.45.3@sha256:f93df3e66e9a8a389f22954e7224cf2d93ea9df9d5214b1ac3a39de3694898f9` |
+| ![published](https://img.shields.io/github/actions/workflow/status/azman0101/homelab/changedetection.yml?branch=main&label=published) | [changedetection](./changedetection) | Website change detection | — | v0.60.9 | — |
 
 - **Published**: tag currently pushed to GHCR. **Pending**: version declared in the Dockerfile but not built yet (`—` when up to date).
 - **Pull reference**: copy-paste address (`tag` + `digest`) of the published image. These columns are maintained by the workflows, don't edit them by hand.
