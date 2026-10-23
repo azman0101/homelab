@@ -24,6 +24,7 @@ Every image in this repository is:
 | ![published](https://img.shields.io/github/actions/workflow/status/azman0101/homelab/pihole.yml?branch=main&label=published) | [pihole](./pihole) | Pi-hole - network-wide ad blocking | v2026.10.0 | — | `ghcr.io/azman0101/pihole:v2026.10.0@sha256:d7c7b0431879726e0ad30d7a14fe3827fd0ba4688f8c537bbf4c045bfac277ae` |
 | ![published](https://img.shields.io/github/actions/workflow/status/azman0101/homelab/uptime-kuma.yml?branch=main&label=published) | [uptime-kuma](./uptime-kuma) | Uptime Kuma - Self-hosted monitoring tool | v2.5.6 | — | `ghcr.io/azman0101/uptime-kuma:v2.5.6@sha256:c22c2f8eac7ab75ba44b0b5485343407a6a6efc6309e78711f9b825b35aa0395` |
 | ![published](https://img.shields.io/github/actions/workflow/status/azman0101/homelab/influxdb.yml?branch=main&label=published) | [influxdb](./influxdb) | InfluxDB - Open-source time-series database | v2.9.1-alpine | — | `ghcr.io/azman0101/influxdb:v2.9.1-alpine@sha256:761e3884b13dfaed3abb669af69b60349e5684e7e5de96856a7ad7cf1510b456` |
+| ![published](https://img.shields.io/github/actions/workflow/status/azman0101/homelab/portainer-ce.yml?branch=main&label=published) | [portainer-ce](./portainer-ce) | Portainer Community Edition | — | v2.45.3 | — |
 
 - **Published**: tag currently pushed to GHCR. **Pending**: version declared in the Dockerfile but not built yet (`—` when up to date).
 - **Pull reference**: copy-paste address (`tag` + `digest`) of the published image. These columns are maintained by the workflows, don't edit them by hand.

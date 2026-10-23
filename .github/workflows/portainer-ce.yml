@@ -1,0 +1,28 @@
+name: Build and Publish portainer-ce
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'portainer-ce/**'
+      - '.github/workflows/portainer-ce.yml'
+      - '.github/workflows/build-image.yml'
+    tags:
+      - 'portainer-ce/v*'
+  schedule:
+    - cron: '0 1 * * 2'   # Weekly Tuesday to catch upstream CVE fixes
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write          # keyless cosign OIDC signing
+  security-events: write   # upload Trivy SARIF to GitHub Security tab
+
+jobs:
+  build-and-push:
+    uses: ./.github/workflows/build-image.yml
+    with:
+      service_name: portainer-ce
+    secrets: inherit

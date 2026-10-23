@@ -22,7 +22,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # List of services to check
-          SERVICES=("authelia" "caddy" "crowdsec" "frigate" "home-assistant" "influxdb" "mosquitto" "pihole" "postfix-relay" "redis" "uptime-kuma")
+          SERVICES=("authelia" "caddy" "crowdsec" "frigate" "home-assistant" "influxdb" "mosquitto" "pihole" "postfix-relay" "redis" "uptime-kuma" "portainer-ce")
 
           for SERVICE in "${SERVICES[@]}"; do
             DOCKERFILE="$SERVICE/Dockerfile"
