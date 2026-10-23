@@ -1,0 +1,41 @@
+name: Validate Container Image
+
+on:
+  workflow_call:
+    inputs:
+      service_name:
+        required: true
+        type: string
+        description: 'The name of the service/directory (e.g. authelia, caddy)'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SERVICE_NAME: ${{ inputs.service_name }}
+      IMAGE_REF: local/${{ inputs.service_name }}:pr
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build image (not pushed)
+        run: docker build --pull --platform linux/amd64 --tag "${IMAGE_REF}" "./${SERVICE_NAME}"
+
+      - name: Run Container Structure Tests
+        run: scripts/run-structure-tests.sh "${SERVICE_NAME}" "${IMAGE_REF}"
+
+      - name: Run smoke test
+        run: |
+          # Optional per-service runtime check, called with the local image reference.
+          SMOKE="${SERVICE_NAME}/tests/smoke.sh"
+          if [ -f "$SMOKE" ]; then
+            bash "$SMOKE" "${IMAGE_REF}"
+          else
+            echo "No smoke test ($SMOKE) for ${SERVICE_NAME}, skipping."
+          fi
