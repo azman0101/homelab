@@ -20,10 +20,3 @@ shared build, structure-test, SBOM, provenance and Cosign pipeline.
 Back up `portainer_data` with Portainer stopped before upgrading. Database
 migrations require the matching pre-upgrade data backup for rollback. Preserve
 the existing volume, Docker socket and published ports when recreating the server.
-
-## Security review on 2026-10-23
-
-Trivy 0.76.1 reports **0 CRITICAL and 5 HIGH** fixable findings in the pinned upstream
-image. Like the existing repository pipeline, the report is informational;
-workflow success does not mean that the image is vulnerability-free. Review
-the findings before merging or deploying. The initial PR remains draft.
