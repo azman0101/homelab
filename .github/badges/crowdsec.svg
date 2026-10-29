@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="163" height="20" role="img" aria-label="published: in progress">
-  <title>published: in progress</title><desc>https://github.com/azman0101/homelab/actions/runs/40857107662 (crowdsec/v1.8.1)</desc>
-  <rect width="70" height="20" fill="#555"/><rect x="70" width="93" height="20" fill="#dfb317"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="135" height="20" role="img" aria-label="published: success">
+  <title>published: success</title><desc>https://github.com/azman0101/homelab/actions/runs/40857107662 (crowdsec/v1.8.1)</desc>
+  <rect width="70" height="20" fill="#555"/><rect x="70" width="65" height="20" fill="#4c1"/>
   <g fill="#fff" text-anchor="middle" font-family="Verdana,DejaVu Sans,sans-serif" font-size="11">
-    <text x="35" y="14">published</text><text x="116.5" y="14">in progress</text>
+    <text x="35" y="14">published</text><text x="102.5" y="14">success</text>
   </g>
 </svg>
