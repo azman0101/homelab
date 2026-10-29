@@ -36,10 +36,11 @@ case "$MODE" in
     ;;
 esac
 
+# Identify the service in the second column; the badge may be linked or unlinked.
 MODE="$MODE" SRV="$SERVICE" TAG="$TAG" REF="$REF" perl -i -pe '
   BEGIN { $found = 0 }
   $s = $ENV{SRV};
-  if (/^(\|\s*!\[[^\]]*\]\([^)]+\)\s*\|\s*\[\Q$s\E\]\(\.\/\Q$s\E\)\s*\|[^|]*\|)([^|]*)\|([^|]*)\|([^|]*)\|\s*$/) {
+  if (/^(\|[^|\r\n]*\|\s*\[\Q$s\E\]\(\.\/\Q$s\E\)\s*\|[^|]*\|)([^|]*)\|([^|]*)\|([^|]*)\|\s*$/) {
     ($head, $pub, $pend, $ref) = ($1, $2, $3, $4);
     $pub =~ s/^\s+|\s+$//g;
     $pend =~ s/^\s+|\s+$//g;
