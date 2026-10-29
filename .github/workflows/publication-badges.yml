@@ -1,0 +1,68 @@
+name: Update publication badges
+
+on:
+  workflow_run:
+    workflows:
+      - Build and Publish authelia
+      - Build and Publish caddy
+      - Build and Publish changedetection
+      - Build and Publish crowdsec
+      - Build and Publish frigate
+      - Build and Publish home-assistant
+      - Build and Publish influxdb
+      - Build and Publish mosquitto
+      - Build and Publish pihole
+      - Build and Publish portainer-ce
+      - Build and Publish postfix-relay
+      - Build and Publish redis
+      - Build and Publish uptime-kuma
+    types: [requested, in_progress, completed]
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/publication-badges.yml
+      - scripts/update-publication-badges.py
+  schedule:
+    - cron: '17 * * * *'
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: publication-badges
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # workflow_run must only execute trusted default-branch code.
+          ref: ${{ github.event.repository.default_branch }}
+      - name: Refresh badges from the latest runs across all refs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin "$DEFAULT_BRANCH"
+            git reset --hard "origin/$DEFAULT_BRANCH"
+            python3 scripts/update-publication-badges.py
+            git add .github/badges
+            if git diff --cached --quiet; then
+              exit 0
+            fi
+            git commit -m 'docs: refresh publication workflow badges'
+            if git push origin "HEAD:$DEFAULT_BRANCH"; then
+              exit 0
+            fi
+          done
+          echo 'Could not push publication badges after 5 attempts' >&2
+          exit 1
