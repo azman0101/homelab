@@ -1,0 +1,14 @@
+{
+  "days": 7,
+  "label": "supply-chain: embargo",
+  "released_label": "supply-chain: eligible",
+  "status_context": "Supply chain embargo",
+  "excluded_paths": [
+    "README.md",
+    "**/README.md",
+    "docs/**",
+    "LICENSE",
+    "LICENSE.*",
+    ".github/badges/**"
+  ]
+}

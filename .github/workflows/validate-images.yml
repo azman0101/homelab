@@ -1,13 +1,47 @@
 name: Validate Images PR
 
 on:
-  pull_request:
+  # Dispatched by the trusted embargo controller after the waiting period.
+  # No pull_request trigger: Draft alone does not prevent CI from running.
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        required: true
+        type: string
+      head_sha:
+        required: true
+        type: string
 
 permissions:
   contents: read
+  pull-requests: read
+
+concurrency:
+  group: validate-pr-${{ inputs.pr_number }}
+  cancel-in-progress: true
 
 jobs:
+  embargo:
+    runs-on: ubuntu-latest
+    outputs:
+      head_sha: ${{ steps.authorize.outputs.head_sha }}
+      base_sha: ${{ steps.authorize.outputs.base_sha }}
+    steps:
+      - name: Checkout trusted controller before touching PR content
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Verify embargo for this exact PR head
+        id: authorize
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          HEAD_SHA: ${{ inputs.head_sha }}
+        run: python3 scripts/pr-embargo.py authorize --number "$PR_NUMBER" --sha "$HEAD_SHA"
+
   prepare:
+    needs: embargo
     runs-on: ubuntu-latest
     outputs:
       services: ${{ steps.detect.outputs.services }}
@@ -15,16 +49,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ needs.embargo.outputs.head_sha }}
           fetch-depth: 0
           persist-credentials: false
 
       - name: Detect services to validate
         id: detect
         env:
-          BASE_REF: ${{ github.base_ref }}
-          SHA: ${{ github.sha }}
+          BASE_SHA: ${{ needs.embargo.outputs.base_sha }}
+          SHA: ${{ needs.embargo.outputs.head_sha }}
         run: |
-          CHANGED_FILES=$(git diff --name-only "origin/${BASE_REF}...${SHA}")
+          CHANGED_FILES=$(git diff --name-only "${BASE_SHA}...${SHA}")
 
           ALL_SERVICES=$(for f in */Dockerfile; do dirname "$f"; done)
 
@@ -39,7 +74,7 @@ jobs:
           echo "services=$(echo "$SERVICES" | jq -R -s -c 'split("\n") | map(select(. != ""))')" >> "$GITHUB_OUTPUT"
 
   validate:
-    needs: prepare
+    needs: [embargo, prepare]
     if: ${{ needs.prepare.outputs.services != '[]' }}
     strategy:
       fail-fast: false
@@ -48,3 +83,4 @@ jobs:
     uses: ./.github/workflows/validate-image.yml
     with:
       service_name: ${{ matrix.service }}
+      head_sha: ${{ needs.embargo.outputs.head_sha }}

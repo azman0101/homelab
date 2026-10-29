@@ -1,0 +1,38 @@
+name: PR supply-chain embargo
+
+on:
+  # Only default-branch code is executed. PR contents are never checked out.
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft, labeled, unlabeled]
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  statuses: write
+  actions: write
+
+concurrency:
+  group: pr-embargo-controller
+  cancel-in-progress: false
+
+jobs:
+  embargo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout trusted default-branch controller only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Reconcile embargo state
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        # Always reconcile all open PRs. A pending concurrent event cannot cause
+        # another PR's update to be lost by the concurrency queue.
+        run: python3 scripts/pr-embargo.py reconcile

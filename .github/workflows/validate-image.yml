@@ -7,6 +7,10 @@ on:
         required: true
         type: string
         description: 'The name of the service/directory (e.g. authelia, caddy)'
+      head_sha:
+        required: true
+        type: string
+        description: 'Exact PR head authorized by the embargo controller'
 
 permissions:
   contents: read
@@ -22,6 +26,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.head_sha }}
           persist-credentials: false
 
       - name: Build image (not pushed)
@@ -29,6 +34,16 @@ jobs:
 
       - name: Run Container Structure Tests
         run: scripts/run-structure-tests.sh "${SERVICE_NAME}" "${IMAGE_REF}"
+
+      - name: Scan the candidate only after embargo
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: ${{ env.IMAGE_REF }}
+          format: table
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '0'
 
       - name: Run smoke test
         run: |

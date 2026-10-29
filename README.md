@@ -11,6 +11,10 @@ Every image in this repository is:
 
 ## Images
 
+Les PR modifiant la supply chain sont placées en **Draft sous embargo de 7 jours**,
+sans build ni scan de leur contenu avant la levée.
+Voir la [politique d'embargo](./docs/embargo.md).
+
 | Built & Published | Image | Description | Published | Pending | Pull reference (`tag@digest`) |
 |---|---|---|---|---|---|
 | [![published](./.github/badges/home-assistant.svg)](https://github.com/azman0101/homelab/actions/workflows/home-assistant.yml) | [home-assistant](./home-assistant) | Home Assistant - Open source home automation | v2026.10.4 | — | `ghcr.io/azman0101/home-assistant:v2026.10.4@sha256:e4e12374c0aaacb2fb1d62acf9675e59e3d4a3a052aa32619ba57f16da108bfb` |

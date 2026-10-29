@@ -1,7 +1,7 @@
-name: Trivy PR Scan
+name: Trivy Main Scan
 
 on:
-  pull_request:
+  # PRs are scanned by validate-images.yml only after embargo authorization.
   push:
     branches:
       - main
