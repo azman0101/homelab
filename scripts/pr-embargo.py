@@ -139,9 +139,9 @@ def save(api, number, comment_id, state, policy):
     return api.request('POST', f'issues/{number}/comments', {'body': body})['id']
 
 
-def status(api, pr, policy, state, description):
+def status(api, pr, policy, state, description, context='status_context'):
     api.request('POST', f"statuses/{pr['head']['sha']}", {
-        'state': state, 'context': policy['status_context'],
+        'state': state, 'context': policy[context],
         'description': description[:140], 'target_url': pr['html_url']})
 
 
@@ -216,6 +216,9 @@ def reconcile(api, number, policy):
             if pr['draft'] and previous.get('managed_draft'):
                 set_draft(api, pr, False)
         status(api, pr, policy, 'success', 'Documentation-only change: no supply-chain embargo')
+        # Both statuses are required to merge, and no image is built for such a change.
+        status(api, pr, policy, 'success', 'Documentation-only change: nothing to validate',
+               context='validation_context')
         return
     comment_id, previous = read_state(api.pages(f'issues/{number}/comments'))
     state = state_for(pr, previous, policy, now())
