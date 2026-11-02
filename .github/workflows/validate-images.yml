@@ -84,3 +84,33 @@ jobs:
     with:
       service_name: ${{ matrix.service }}
       head_sha: ${{ needs.embargo.outputs.head_sha }}
+
+  # Report the outcome on the PR head itself: a workflow_dispatch run is attached to the
+  # default branch, so without this the result would never be visible on (or gate) the PR.
+  report:
+    needs: [embargo, prepare, validate]
+    # Skipped when cancelled: the controller re-dispatches a validation left pending.
+    if: ${{ !cancelled() && needs.embargo.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+    steps:
+      - name: Publish validation status on the PR head
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ needs.embargo.outputs.head_sha }}
+          PREPARE_RESULT: ${{ needs.prepare.result }}
+          VALIDATE_RESULT: ${{ needs.validate.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          # Context must match "validation_context" in .github/embargo.json.
+          if [ "$PREPARE_RESULT" = success ] && [ "$VALIDATE_RESULT" = success ]; then
+            STATE=success; DESCRIPTION="Build, structure and smoke tests passed"
+          elif [ "$PREPARE_RESULT" = success ] && [ "$VALIDATE_RESULT" = skipped ]; then
+            STATE=success; DESCRIPTION="No image changed"
+          else
+            STATE=failure; DESCRIPTION="Validation failed (prepare: ${PREPARE_RESULT}, validate: ${VALIDATE_RESULT})"
+          fi
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/statuses/${HEAD_SHA}" \
+            -f state="$STATE" -f context="Validate images" \
+            -f description="$DESCRIPTION" -f target_url="$RUN_URL"

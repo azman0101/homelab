@@ -3,6 +3,7 @@
   "label": "supply-chain: embargo",
   "released_label": "supply-chain: eligible",
   "status_context": "Supply chain embargo",
+  "validation_context": "Validate images",
   "excluded_paths": [
     "README.md",
     "**/README.md",

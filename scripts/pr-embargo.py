@@ -11,6 +11,12 @@ import urllib.request
 
 MARKER = '<!-- homelab-embargo:v1 '
 BOT = 'github-actions[bot]'
+# A dispatched validation that never reported (cancelled, lost) is re-dispatched after this.
+STALE_VALIDATION = timedelta(hours=3)
+
+
+class DraftForbidden(RuntimeError):
+    """GitHub refused the Draft conversion to this token (GITHUB_TOKEN cannot always do it)."""
 
 
 def now():
@@ -109,6 +115,8 @@ class GitHub:
             {'query': f'mutation($id: ID!) {{ {mutation}(input: {{pullRequestId: $id}}) {{ pullRequest {{ id }} }} }}',
              'variables': {'id': pr['node_id']}})
         if result.get('errors'):
+            if any(error.get('type') == 'FORBIDDEN' for error in result['errors']):
+                raise DraftForbidden(json.dumps(result['errors']))
             raise RuntimeError(json.dumps(result['errors']))
 
 
@@ -135,6 +143,35 @@ def status(api, pr, policy, state, description):
     api.request('POST', f"statuses/{pr['head']['sha']}", {
         'state': state, 'context': policy['status_context'],
         'description': description[:140], 'target_url': pr['html_url']})
+
+
+def set_draft(api, pr, draft):
+    # Draft is a convenience only: the required status is the merge gate. A token that
+    # may not convert the PR must not turn every reconciliation red.
+    try:
+        api.draft(pr, draft)
+        return True
+    except DraftForbidden as error:
+        print(f"::warning::PR #{pr['number']}: cannot {'convert to Draft' if draft else 'mark Ready'}"
+              f' with this token; the required status still blocks the merge. {error}')
+        return False
+
+
+def validation_status(api, policy, sha):
+    # Statuses are listed newest first; only the controller and validation workflow write them.
+    for item in api.pages(f'commits/{sha}/statuses'):
+        if item.get('context') == policy['validation_context'] and \
+                (item.get('creator') or {}).get('login') == BOT:
+            return item
+    return None
+
+
+def needs_validation(api, policy, sha, at):
+    latest = validation_status(api, policy, sha)
+    if latest is None:
+        return True
+    # Only a validation that never reported is retried: a real failure stays red.
+    return latest['state'] == 'pending' and at - timestamp(latest['updated_at']) >= STALE_VALIDATION
 
 
 def set_labels(api, number, policy, released):
@@ -177,7 +214,7 @@ def reconcile(api, number, policy):
         if previous:
             set_labels(api, number, policy, True)
             if pr['draft'] and previous.get('managed_draft'):
-                api.draft(pr, False)
+                set_draft(api, pr, False)
         status(api, pr, policy, 'success', 'Documentation-only change: no supply-chain embargo')
         return
     comment_id, previous = read_state(api.pages(f'issues/{number}/comments'))
@@ -188,7 +225,7 @@ def reconcile(api, number, policy):
         save(api, number, comment_id, state, policy)
         set_labels(api, number, policy, False)
         if not pr['draft']:
-            api.draft(pr, True)
+            set_draft(api, pr, True)
         status(api, pr, policy, 'pending', f"Under embargo until {state['until']}")
         print(f"PR #{number}: embargo until {state['until']}")
         return
@@ -200,14 +237,19 @@ def reconcile(api, number, policy):
     state['released'] = True
     comment_id = save(api, number, comment_id, state, policy)
     set_labels(api, number, policy, True)
-    if current['draft'] and state['managed_draft']:
-        api.draft(current, False)
+    if current['draft'] and state['managed_draft'] and set_draft(api, current, False):
         current['draft'] = False
     status(api, current, policy, 'success', 'Embargo complete for this exact commit')
     # GITHUB_TOKEN-created ready_for_review events do not trigger PR workflows.
     # Explicit dispatch is intentional and always runs trusted default-branch YAML.
-    if not current['draft'] and not state['dispatched']:
+    # validate-images.yml reports its result as a status on this exact SHA, so the
+    # decision to (re)dispatch is taken from that status, not from a one-shot flag.
+    if not current['draft'] and needs_validation(api, policy, state['sha'], now()):
         authorize(api, number, state['sha'], policy)
+        # Pending first: the next reconciliation must not dispatch a second run.
+        api.request('POST', f"statuses/{state['sha']}", {
+            'state': 'pending', 'context': policy['validation_context'],
+            'description': 'Validation dispatched after embargo', 'target_url': current['html_url']})
         api.request('POST', 'actions/workflows/validate-images.yml/dispatches', {
             'ref': os.environ['DEFAULT_BRANCH'],
             'inputs': {'pr_number': str(number), 'head_sha': state['sha']}})

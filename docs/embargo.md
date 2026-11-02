@@ -9,7 +9,9 @@ n'est nécessaire pour cette première version.
 1. La PR est ouverte immédiatement : Dependabot ne retarde pas sa création.
 2. Le contrôleur observe son SHA, enregistre l'heure de première observation dans
    un commentaire signé par `github-actions[bot]`, pose le label
-   **supply-chain: embargo**, et convertit la PR en **Draft**.
+   **supply-chain: embargo**, et tente de convertir la PR en **Draft**. Si GitHub
+   refuse cette conversion au jeton du workflow, un avertissement est émis et
+   l'embargo reste porté par le statut requis : le contrôleur ne passe pas en échec.
 3. Pendant **7 jours**, le statut **Supply chain embargo** reste en attente.
    Aucun checkout du contenu de la PR, build, test de conteneur ou scan Trivy de
    cette PR n'est lancé par les workflows de validation.
@@ -20,8 +22,14 @@ n'est nécessaire pour cette première version.
    lui-même mise en Draft. Une PR initialement ouverte en Draft reste en Draft
    jusqu'à une action de son auteur.
 6. Le contrôleur déclenche explicitement la validation de ce SHA. Le workflow
-   vérifie à nouveau l'état de l'embargo avant tout checkout de contenu candidat.
+   vérifie à nouveau l'état de l'embargo avant tout checkout de contenu candidat,
+   puis publie son résultat dans le statut **Validate images** de ce SHA. Une
+   validation restée en attente plus de 3 heures (annulée, perdue) est relancée
+   par le contrôleur ; un échec réel n'est pas relancé automatiquement.
    La PR n'est pas fusionnée automatiquement.
+
+Aucune relance manuelle n'est nécessaire pour lever l'embargo : les statuts sont
+mis à jour sur le SHA de la PR par chaque réconciliation.
 
 Un retrait du label ou un passage manuel en Ready ne constitue pas une levée.
 La prochaine réconciliation remet la PR sous embargo. Une nouvelle exécution
@@ -44,9 +52,10 @@ personne ou le bot qui ouvre la PR. Les chemins exclus sont configurables.
 - Le délai est vérifié par SHA, pas par label. Les commentaires écrits par les
   auteurs de PR sont ignorés. Les PR dépassant la limite de 3 000 fichiers de
   l'API GitHub restent bloquées pour examen.
-- Le statut **Supply chain embargo** doit être requis par la règle de protection
-  de la branche par défaut, sinon un mainteneur pourrait passer manuellement une
-  PR en Ready et la fusionner avant la réconciliation.
+- Les statuts **Supply chain embargo** et **Validate images** doivent être requis
+  par la règle de protection de la branche par défaut. Sans eux, rien n'empêche
+  de fusionner une PR sous embargo ou dont la validation a échoué : la conversion
+  en Draft n'est qu'un confort et n'est pas garantie.
 - Ne pas ajouter de nouveau workflow `pull_request` exécutant du contenu candidat
   sans passer par ce contrôleur. Le dispositif protège les workflows gérés ici ;
   il ne remplace pas les politiques GitHub d'approbation des workflows de forks.
