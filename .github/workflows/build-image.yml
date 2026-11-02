@@ -161,8 +161,29 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${DIGEST} \
             --format '{{ json .Provenance }}'
 
-      - name: Record published version and pull reference in README
+      - name: Create release bot token
+        # The GitHub App is on the bypass list of the "merge" ruleset: GITHUB_TOKEN cannot
+        # push to main once status checks are required there.
+        id: app-token
         if: ${{ success() && steps.build.outputs.digest != '' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')) }}
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Checkout main for the README update
+        if: ${{ steps.app-token.outcome == 'success' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          path: readme-update
+          # The push below goes out with the App token persisted here.
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Record published version and pull reference in README
+        if: ${{ steps.app-token.outcome == 'success' }}
+        working-directory: readme-update
         env:
           SERVICE_NAME: ${{ inputs.service_name }}
           VERSION: ${{ steps.version.outputs.version }}
@@ -182,7 +203,8 @@ jobs:
               exit 0
             fi
             git add README.md
-            git commit -m "docs: update ${SERVICE_NAME} image reference to ${VERSION}@${DIGEST}"
+            # [skip ci]: an App-token push would otherwise trigger push workflows (GITHUB_TOKEN does not).
+            git commit -m "docs: update ${SERVICE_NAME} image reference to ${VERSION}@${DIGEST} [skip ci]"
             if git push origin HEAD:main; then
               exit 0
             fi
