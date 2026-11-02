@@ -21,13 +21,20 @@ def pr(draft=False, sha='a' * 40):
             'html_url': 'https://github.com/example/repo/pull/1'}
 
 
+def commit_status(state, context=POLICY['validation_context'], login=e.BOT, at=AT):
+    return {'state': state, 'context': context, 'creator': {'login': login},
+            'updated_at': at.isoformat().replace('+00:00', 'Z')}
+
+
 class FakeAPI:
-    def __init__(self, pull=None, state=None, files=None):
+    def __init__(self, pull=None, state=None, files=None, statuses=None, forbid_draft=False):
         self.pull = pull or pr()
         self.comments = [] if state is None else [{
             'id': 10, 'user': {'login': e.BOT, 'type': 'Bot'},
             'body': e.body_for(state, POLICY)}]
         self.files = files or [{'filename': 'caddy/Dockerfile'}]
+        self.statuses = list(statuses or [])  # newest first, like the GitHub API
+        self.forbid_draft = forbid_draft
         self.calls = []
 
     def request(self, method, path, data=None):
@@ -36,14 +43,36 @@ class FakeAPI:
             return deepcopy(self.pull)
         if path == 'issues/1/comments':
             return {'id': 10}
+        if method == 'POST' and path.startswith('statuses/'):
+            self.statuses.insert(0, commit_status(data['state'], data['context'], at=e.now()))
         return None
 
     def pages(self, path):
+        if path.endswith('/statuses'):
+            return iter(self.statuses)
         return iter(self.comments if path.endswith('/comments') else self.files)
 
     def draft(self, pull, draft):
         self.calls.append(('DRAFT', draft))
+        if self.forbid_draft:
+            raise e.DraftForbidden('[{"type": "FORBIDDEN"}]')
         self.pull['draft'] = draft
+
+
+def released(api):
+    # authorize re-reads the saved state from GitHub, so emulate that write.
+    original_request = api.request
+    def request(method, path, data=None):
+        result = original_request(method, path, data)
+        if path == 'issues/comments/10' and method == 'PATCH':
+            api.comments[0]['body'] = data['body']
+        return result
+    api.request = request
+    return api
+
+
+def dispatches(api):
+    return [call for call in api.calls if 'dispatches' in str(call)]
 
 
 class EmbargoTests(unittest.TestCase):
@@ -93,15 +122,7 @@ class EmbargoTests(unittest.TestCase):
     @patch.object(e, 'now', return_value=AT + timedelta(days=7))
     def test_expiry_marks_ready_and_dispatches_trusted_main_once(self, _):
         state = e.state_for(pr(), None, POLICY, AT)
-        api = FakeAPI(pull=pr(draft=True), state=state)
-        # authorize re-reads the saved state from GitHub, so emulate that write.
-        original_request = api.request
-        def request(method, path, data=None):
-            result = original_request(method, path, data)
-            if path == 'issues/comments/10' and method == 'PATCH':
-                api.comments[0]['body'] = data['body']
-            return result
-        api.request = request
+        api = released(FakeAPI(pull=pr(draft=True), state=state))
         with patch.dict(e.os.environ, DEFAULT_BRANCH='main'):
             e.reconcile(api, 1, POLICY)
             e.reconcile(api, 1, POLICY)
@@ -158,6 +179,41 @@ class EmbargoTests(unittest.TestCase):
         api.request = request
         e.reconcile(api, 1, POLICY)
         self.assertFalse(any('dispatches' in str(call) for call in api.calls))
+
+    @patch.object(e, 'now', return_value=AT)
+    def test_forbidden_draft_conversion_keeps_embargo_without_failing(self, _):
+        api = FakeAPI(forbid_draft=True)
+        e.reconcile(api, 1, POLICY)
+        self.assertIn(('DRAFT', True), api.calls)
+        self.assertEqual(api.statuses[0]['context'], POLICY['status_context'])
+        self.assertEqual(api.statuses[0]['state'], 'pending')
+        self.assertFalse(dispatches(api))
+
+    @patch.object(e, 'now', return_value=AT + timedelta(days=7))
+    def test_release_dispatches_even_if_draft_cannot_be_changed(self, _):
+        state = e.state_for(pr(), None, POLICY, AT)
+        api = released(FakeAPI(state=state, forbid_draft=True))
+        with patch.dict(e.os.environ, DEFAULT_BRANCH='main'):
+            e.reconcile(api, 1, POLICY)
+        self.assertEqual(len(dispatches(api)), 1)
+        contexts = {(s['context'], s['state']) for s in api.statuses}
+        self.assertIn((POLICY['status_context'], 'success'), contexts)
+        self.assertIn((POLICY['validation_context'], 'pending'), contexts)
+
+    def test_validation_is_retried_only_when_it_never_reported(self):
+        at = AT + timedelta(days=8)
+        cases = [([], 1),
+                 ([commit_status('pending', at=at - timedelta(hours=4))], 1),
+                 ([commit_status('pending', at=at - timedelta(hours=1))], 0),
+                 ([commit_status('failure', at=at - timedelta(hours=4))], 0),
+                 ([commit_status('success', at=at - timedelta(hours=4))], 0),
+                 ([commit_status('success', login='attacker')], 1)]
+        for statuses, expected in cases:
+            state = dict(e.state_for(pr(), None, POLICY, AT), released=True, dispatched=True)
+            api = released(FakeAPI(state=state, statuses=statuses))
+            with patch.object(e, 'now', return_value=at), patch.dict(e.os.environ, DEFAULT_BRANCH='main'):
+                e.reconcile(api, 1, POLICY)
+            self.assertEqual(len(dispatches(api)), expected, statuses)
 
     @patch.object(e, 'now', return_value=AT)
     def test_large_pr_fails_closed(self, _):
