@@ -216,6 +216,17 @@ class EmbargoTests(unittest.TestCase):
             self.assertEqual(len(dispatches(api)), expected, statuses)
 
     @patch.object(e, 'now', return_value=AT)
+    def test_docs_only_change_satisfies_both_required_statuses(self, _):
+        api = FakeAPI(files=[{'filename': 'docs/embargo.md'}, {'filename': 'README.md'}])
+        e.reconcile(api, 1, POLICY)
+        latest = {}
+        for item in reversed(api.statuses):  # oldest first, so the newest wins
+            latest[item['context']] = item['state']
+        self.assertEqual(latest, {POLICY['status_context']: 'success',
+                                  POLICY['validation_context']: 'success'})
+        self.assertFalse(dispatches(api))
+
+    @patch.object(e, 'now', return_value=AT)
     def test_large_pr_fails_closed(self, _):
         api = FakeAPI(pull=dict(pr(), changed_files=3001))
         with self.assertRaises(RuntimeError):

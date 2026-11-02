@@ -36,7 +36,8 @@ La prochaine réconciliation remet la PR sous embargo. Une nouvelle exécution
 manuelle de `Validate Images PR` ne permet pas d'ignorer le délai.
 
 La portée inclut tous les fichiers sauf README, documentation, licences et badges
-générés. Elle couvre donc Dockerfiles, fichiers ajoutés aux contextes de build,
+générés. Une PR qui ne touche que ces fichiers n'est pas mise sous embargo et reçoit
+directement les deux statuts requis en succès, puisqu'aucune image n'est à valider. Elle couvre donc Dockerfiles, fichiers ajoutés aux contextes de build,
 GitHub Actions, scripts, tests et fichiers de dépendances, quelle que soit la
 personne ou le bot qui ouvre la PR. Les chemins exclus sont configurables.
 
