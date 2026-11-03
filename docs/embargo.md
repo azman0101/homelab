@@ -6,7 +6,9 @@ n'est nécessaire pour cette première version.
 
 ## Parcours d'une PR
 
-1. La PR est ouverte immédiatement : Dependabot ne retarde pas sa création.
+1. Dependabot propose les mises à jour de version par lots les **1er et 15 de chaque
+   mois à 06:00 UTC**, après un cooldown de **7 jours** lorsque la date de
+   publication est disponible. Dès son ouverture, la PR entre dans l’embargo.
 2. Le contrôleur observe son SHA, enregistre l'heure de première observation dans
    un commentaire signé par `github-actions[bot]`, pose le label
    **supply-chain: embargo**, et tente de convertir la PR en **Draft**. Si GitHub
@@ -40,6 +42,44 @@ générés. Une PR qui ne touche que ces fichiers n'est pas mise sous embargo et
 directement les deux statuts requis en succès, puisqu'aucune image n'est à valider. Elle couvre donc Dockerfiles, fichiers ajoutés aux contextes de build,
 GitHub Actions, scripts, tests et fichiers de dépendances, quelle que soit la
 personne ou le bot qui ouvre la PR. Les chemins exclus sont configurables.
+
+## Cooldown et fenêtre de fusion Dependabot
+
+La configuration de [Dependabot](../.github/dependabot.yml) applique aux
+13 images Docker et aux GitHub Actions :
+
+- `cooldown.default-days: 7` : une nouvelle version doit avoir au moins 7 jours
+  avant d'être proposée, lorsque son âge est connu du registre ;
+- `schedule.interval: cron`, `cronjob: "0 6 1,15 * *"` : deux campagnes par mois,
+  espacées de 14 à 17 jours, plutôt qu'une vérification quotidienne susceptible
+  de remplacer les PR par une nouvelle version ;
+- `rebase-strategy: disabled` : pas de rebase automatique des nouvelles PR lorsque
+  `main` évolue. Si un conflit exige un rebase, il doit être demandé explicitement
+  et le nouveau SHA recommence son embargo.
+
+Exemple : une PR ouverte le 1er devient éligible au plus tôt le 8, ce qui laisse
+ensuite environ 7 jours pour la valider et la fusionner avant la campagne du 15.
+Le contrôleur horaire et la durée de validation peuvent réduire cette fenêtre.
+Le cooldown et l'embargo sont deux délais distincts ; le cooldown ne remplace
+jamais l'observation locale du SHA pendant 7 jours avant de l'exécuter.
+
+Un cooldown seul ne fige pas une PR existante. Pour Docker, les dates de
+publication peuvent aussi être absentes, notamment pour un changement de digest
+sans changement de tag. La cadence espacée reste donc importante même lorsque
+Dependabot ne peut pas appliquer le cooldown natif.
+
+Les mises à jour de sécurité ne suivent pas le cooldown ni le calendrier des
+mises à jour de version ; elles peuvent donc interrompre cette cadence. Elles
+restent soumises à l'embargo du dépôt : cette configuration n'autorise aucun
+build anticipé. Un lancement manuel de Dependabot peut également créer une PR
+en dehors des deux campagnes.
+
+GitHub indique que les PR déjà ouvertes lors de la désactivation des rebases
+peuvent continuer à être rebasées jusqu'à 30 jours après leur ouverture. Cette
+configuration ne promet donc pas de figer immédiatement les PR existantes, ni de
+conserver indéfiniment une PR non fusionnée au-delà de la campagne suivante.
+
+Référence : [options Dependabot : cooldown, rebase et calendrier](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference).
 
 ## Fonctionnement et permissions
 
