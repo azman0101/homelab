@@ -2,10 +2,11 @@ version: 2
 updates:
   # Version updates: batches on the 1st and 15th at 06:00 UTC.
   # Leave >=14 days between checks for the 7-day embargo and a merge window.
-  # cooldown delays new releases; the schedule also limits superseding PRs,
-  # including Docker digest updates without reliable publication timestamps.
+  # Keep PRs visible: exclude all dependencies from native cooldown (including
+  # its default delay). Waiting is enforced by the PR embargo, not version filtering.
+  # The schedule limits superseding PRs, including Docker digest updates.
   # Disable automatic rebases so routine main updates do not restart embargo.
-  # Dependabot security updates do not follow the version-update cooldown/schedule.
+  # Dependabot security updates do not follow the version-update schedule.
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -13,7 +14,8 @@ updates:
       interval: "cron"
       cronjob: "0 6 1,15 * *"
     cooldown:
-      default-days: 7
+      exclude:
+        - "*"
     rebase-strategy: "disabled"
 
   # Docker Images
@@ -23,7 +25,8 @@ updates:
       interval: "cron"
       cronjob: "0 6 1,15 * *"
     cooldown:
-      default-days: 7
+      exclude:
+        - "*"
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
@@ -32,7 +35,8 @@ updates:
       interval: "cron"
       cronjob: "0 6 1,15 * *"
     cooldown:
-      default-days: 7
+      exclude:
+        - "*"
     rebase-strategy: "disabled"
     allow:
       - dependency-name: "caddy"
@@ -46,7 +50,8 @@ updates:
       interval: "cron"
       cronjob: "0 6 1,15 * *"
     cooldown:
-      default-days: 7
+      exclude:
+        - "*"
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
@@ -55,7 +60,8 @@ updates:
       interval: "cron"
       cronjob: "0 6 1,15 * *"
     cooldown:
-      default-days: 7
+      exclude:
+        - "*"
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
@@ -64,7 +70,8 @@ updates:
       interval: "cron"
       cronjob: "0 6 1,15 * *"
     cooldown:
-      default-days: 7
+      exclude:
+        - "*"
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
@@ -73,7 +80,8 @@ updates:
       interval: "cron"
       cronjob: "0 6 1,15 * *"
     cooldown:
-      default-days: 7
+      exclude:
+        - "*"
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
@@ -82,7 +90,8 @@ updates:
       interval: "cron"
       cronjob: "0 6 1,15 * *"
     cooldown:
-      default-days: 7
+      exclude:
+        - "*"
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
@@ -91,7 +100,8 @@ updates:
       interval: "cron"
       cronjob: "0 6 1,15 * *"
     cooldown:
-      default-days: 7
+      exclude:
+        - "*"
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
@@ -100,7 +110,8 @@ updates:
       interval: "cron"
       cronjob: "0 6 1,15 * *"
     cooldown:
-      default-days: 7
+      exclude:
+        - "*"
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
@@ -109,7 +120,8 @@ updates:
       interval: "cron"
       cronjob: "0 6 1,15 * *"
     cooldown:
-      default-days: 7
+      exclude:
+        - "*"
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
@@ -118,7 +130,8 @@ updates:
       interval: "cron"
       cronjob: "0 6 1,15 * *"
     cooldown:
-      default-days: 7
+      exclude:
+        - "*"
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
@@ -127,7 +140,8 @@ updates:
       interval: "cron"
       cronjob: "0 6 1,15 * *"
     cooldown:
-      default-days: 7
+      exclude:
+        - "*"
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
@@ -136,5 +150,6 @@ updates:
       interval: "cron"
       cronjob: "0 6 1,15 * *"
     cooldown:
-      default-days: 7
+      exclude:
+        - "*"
     rebase-strategy: "disabled"
