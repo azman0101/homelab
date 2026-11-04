@@ -47,6 +47,8 @@ def state_for(pr, previous, policy, at):
     return {'sha': pr['head']['sha'], 'first_seen': at.isoformat(),
             'until': (at + timedelta(days=policy['days'])).isoformat(),
             'managed_draft': (previous or {}).get('managed_draft', not pr['draft']),
+            # A new commit does not change the token's Draft permissions.
+            'draft_forbidden': (previous or {}).get('draft_forbidden', False),
             'released': False, 'dispatched': False}
 
 
@@ -111,9 +113,14 @@ class GitHub:
 
     def draft(self, pr, draft):
         mutation = 'convertPullRequestToDraft' if draft else 'markPullRequestReadyForReview'
-        result = self.request('POST', os.environ.get('GITHUB_GRAPHQL_URL', 'https://api.github.com/graphql'),
-            {'query': f'mutation($id: ID!) {{ {mutation}(input: {{pullRequestId: $id}}) {{ pullRequest {{ id }} }} }}',
-             'variables': {'id': pr['node_id']}})
+        try:
+            result = self.request('POST', os.environ.get('GITHUB_GRAPHQL_URL', 'https://api.github.com/graphql'),
+                {'query': f'mutation($id: ID!) {{ {mutation}(input: {{pullRequestId: $id}}) {{ pullRequest {{ id }} }} }}',
+                 'variables': {'id': pr['node_id']}})
+        except urllib.error.HTTPError as error:
+            if error.code == 403:
+                raise DraftForbidden('HTTP 403: Draft operation forbidden') from error
+            raise
         if result.get('errors'):
             if any(error.get('type') == 'FORBIDDEN' for error in result['errors']):
                 raise DraftForbidden(json.dumps(result['errors']))
@@ -145,15 +152,19 @@ def status(api, pr, policy, state, description, context='status_context'):
         'description': description[:140], 'target_url': pr['html_url']})
 
 
-def set_draft(api, pr, draft):
+def set_draft(api, pr, draft, policy, state, comment_id):
     # Draft is a convenience only: the required status is the merge gate. A token that
-    # may not convert the PR must not turn every reconciliation red.
+    # may not convert the PR must not be retried on every reconciliation or push.
+    if not policy.get('manage_drafts', False) or state.get('draft_forbidden'):
+        return False
     try:
         api.draft(pr, draft)
         return True
     except DraftForbidden as error:
+        state['draft_forbidden'] = True
+        save(api, pr['number'], comment_id, state, policy)
         print(f"::warning::PR #{pr['number']}: cannot {'convert to Draft' if draft else 'mark Ready'}"
-              f' with this token; the required status still blocks the merge. {error}')
+              f' with this token; automatic Draft management disabled for this PR. {error}')
         return False
 
 
@@ -210,11 +221,11 @@ def reconcile(api, number, policy):
     if pr['changed_files'] > 3000:
         raise RuntimeError('PR exceeds GitHub file-list limit; embargo remains blocked')
     if not relevant(pull_files(api, number), policy):
-        _, previous = read_state(api.pages(f'issues/{number}/comments'))
+        comment_id, previous = read_state(api.pages(f'issues/{number}/comments'))
         if previous:
             set_labels(api, number, policy, True)
             if pr['draft'] and previous.get('managed_draft'):
-                set_draft(api, pr, False)
+                set_draft(api, pr, False, policy, previous, comment_id)
         status(api, pr, policy, 'success', 'Documentation-only change: no supply-chain embargo')
         # Both statuses are required to merge, and no image is built for such a change.
         status(api, pr, policy, 'success', 'Documentation-only change: nothing to validate',
@@ -225,10 +236,10 @@ def reconcile(api, number, policy):
     if not eligible(pr, state, now()):
         state['released'] = False
         state['dispatched'] = False
-        save(api, number, comment_id, state, policy)
+        comment_id = save(api, number, comment_id, state, policy)
         set_labels(api, number, policy, False)
         if not pr['draft']:
-            set_draft(api, pr, True)
+            set_draft(api, pr, True, policy, state, comment_id)
         status(api, pr, policy, 'pending', f"Under embargo until {state['until']}")
         print(f"PR #{number}: embargo until {state['until']}")
         return
@@ -240,7 +251,7 @@ def reconcile(api, number, policy):
     state['released'] = True
     comment_id = save(api, number, comment_id, state, policy)
     set_labels(api, number, policy, True)
-    if current['draft'] and state['managed_draft'] and set_draft(api, current, False):
+    if current['draft'] and state['managed_draft'] and set_draft(api, current, False, policy, state, comment_id):
         current['draft'] = False
     status(api, current, policy, 'success', 'Embargo complete for this exact commit')
     # GITHUB_TOKEN-created ready_for_review events do not trigger PR workflows.

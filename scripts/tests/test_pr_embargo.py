@@ -11,7 +11,9 @@ ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location('embargo', ROOT / 'scripts/pr-embargo.py')
 e = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(e)
-POLICY = json.loads((ROOT / '.github/embargo.json').read_text())
+REPO_POLICY = json.loads((ROOT / '.github/embargo.json').read_text())
+# Exercise optional Draft support separately from the deployed, disabled policy.
+POLICY = dict(REPO_POLICY, manage_drafts=True)
 AT = datetime(2026, 10, 29, tzinfo=timezone.utc)
 
 
@@ -42,7 +44,11 @@ class FakeAPI:
         if method == 'GET' and path == 'pulls/1':
             return deepcopy(self.pull)
         if path == 'issues/1/comments':
+            self.comments.append({'id': 10, 'user': {'login': e.BOT, 'type': 'Bot'},
+                                  'body': data['body']})
             return {'id': 10}
+        if path == 'issues/comments/10' and method == 'PATCH':
+            self.comments[0]['body'] = data['body']
         if method == 'POST' and path.startswith('statuses/'):
             self.statuses.insert(0, commit_status(data['state'], data['context'], at=e.now()))
         return None
@@ -188,6 +194,46 @@ class EmbargoTests(unittest.TestCase):
         self.assertEqual(api.statuses[0]['context'], POLICY['status_context'])
         self.assertEqual(api.statuses[0]['state'], 'pending')
         self.assertFalse(dispatches(api))
+
+    @patch.object(e, 'now', return_value=AT)
+    def test_forbidden_draft_is_not_retried_even_after_new_commit(self, _):
+        api = FakeAPI(forbid_draft=True)
+        e.reconcile(api, 1, POLICY)
+        e.reconcile(api, 1, POLICY)
+        api.pull['head']['sha'] = 'c' * 40
+        e.reconcile(api, 1, POLICY)
+        self.assertEqual(api.calls.count(('DRAFT', True)), 1)
+        _, state = e.read_state(api.comments)
+        self.assertTrue(state['draft_forbidden'])
+        self.assertEqual(state['sha'], 'c' * 40)
+        self.assertEqual(api.statuses[0]['state'], 'pending')
+        self.assertFalse(dispatches(api))
+
+    @patch.object(e, 'now', return_value=AT)
+    def test_deployed_policy_never_attempts_draft_conversion(self, _):
+        self.assertIs(REPO_POLICY['manage_drafts'], False)
+        api = FakeAPI(forbid_draft=True)
+        with patch('builtins.print') as output:
+            e.reconcile(api, 1, REPO_POLICY)
+            e.reconcile(api, 1, REPO_POLICY)
+        self.assertFalse(any(call[0] == 'DRAFT' for call in api.calls))
+        self.assertFalse(any('warning' in str(call) for call in output.call_args_list))
+        self.assertEqual(api.statuses[0]['state'], 'pending')
+        self.assertFalse(dispatches(api))
+
+    def test_remembered_refusal_also_prevents_ready_mutation(self):
+        state = dict(e.state_for(pr(), None, POLICY, AT), draft_forbidden=True)
+        api = FakeAPI(pull=pr(draft=True))
+        self.assertFalse(e.set_draft(api, api.pull, False, POLICY, state, 10))
+        self.assertEqual(api.calls, [])
+
+    def test_non_permission_error_is_not_silently_cached(self):
+        api = FakeAPI()
+        state = e.state_for(pr(), None, POLICY, AT)
+        with patch.object(api, 'draft', side_effect=RuntimeError('temporary failure')):
+            with self.assertRaises(RuntimeError):
+                e.set_draft(api, api.pull, True, POLICY, state, 10)
+        self.assertFalse(state['draft_forbidden'])
 
     @patch.object(e, 'now', return_value=AT + timedelta(days=7))
     def test_release_dispatches_even_if_draft_cannot_be_changed(self, _):

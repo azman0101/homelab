@@ -1,5 +1,6 @@
 {
   "days": 7,
+  "manage_drafts": false,
   "label": "supply-chain: embargo",
   "released_label": "supply-chain: eligible",
   "status_context": "Supply chain embargo",
