@@ -1,5 +1,5 @@
 # Upstream image pinned to immutable digest for supply chain security
-FROM influxdb:2.9.1-alpine@sha256:385d5fe4746f4c087d6468519f023b24b425c0848a63b3185de8681e0f94d285
+FROM influxdb:2.9.1-alpine@sha256:cc8083573dc3969c191d1bfb768954eaf7a4c615af12e661034fd4f63c7b5570
 
 LABEL org.opencontainers.image.description="InfluxDB - Open-source time-series database"
 
