@@ -107,7 +107,7 @@ def body_for(state, policy):
             f"- Commit observé : `{state['sha']}`\n"
             f"- Première observation : **{state['first_seen']}**\n"
             f"- Fin au plus tôt : **{state['until']}** (UTC, {policy['days']} jours)\n\n"
-            'Tout nouveau commit redémarre le délai. Les labels ne constituent pas une autorisation.\n'
+            'Tout commit qui modifie le contenu redémarre le délai ; un rebase à l\'identique le conserve. Les labels ne constituent pas une autorisation.\n'
             'La levée rend la PR éligible aux tests ; elle ne fusionne pas la PR et ne certifie pas son innocuité.\n')
 
 
