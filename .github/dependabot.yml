@@ -1,11 +1,11 @@
 version: 2
 updates:
   # Version updates: batches on the 1st and 15th at 06:00 UTC.
-  # Leave >=14 days between checks for the 7-day embargo and a merge window.
+  # Leave >=14 days between checks for the 4-day embargo and a merge window.
   # Keep PRs visible: exclude all dependencies from native cooldown (including
   # its default delay). Waiting is enforced by the PR embargo, not version filtering.
   # The schedule limits superseding PRs, including Docker digest updates.
-  # Disable automatic rebases so routine main updates do not restart embargo.
+  # Disable automatic rebases to limit superseding; a rebase with identical changes keeps its embargo clock.
   # Dependabot security updates do not follow the version-update schedule.
   # GitHub Actions
   - package-ecosystem: "github-actions"

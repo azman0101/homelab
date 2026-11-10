@@ -8,19 +8,24 @@ n'est nécessaire pour cette première version.
 
 1. Dependabot propose les mises à jour de version par lots les **1er et 15 de chaque
    mois à 06:00 UTC**, sans filtrage par âge de publication. Dès son ouverture,
-   la PR est visible et entre dans l’embargo de 7 jours.
+   la PR est visible et entre dans l’embargo de 4 jours.
 2. Le contrôleur observe son SHA, enregistre l'heure de première observation dans
    un commentaire signé par `github-actions[bot]`, pose le label
    **supply-chain: embargo** et bloque la fusion par le statut requis. La gestion
    automatique des Draft est désactivée (`manage_drafts: false`), car le jeton
    du contrôleur ne dispose pas de cette capacité. Aucun appel de conversion
    en Draft ou de passage en Ready n'est donc effectué.
-3. Pendant **7 jours**, le statut **Supply chain embargo** reste en attente.
+3. Pendant **4 jours**, le statut **Supply chain embargo** reste en attente.
    Aucun checkout du contenu de la PR, build, test de conteneur ou scan Trivy de
    cette PR n'est lancé par les workflows de validation.
-4. Chaque nouveau commit remet le délai à zéro, même pour une modification mineure.
+4. Chaque nouveau commit qui modifie le contenu remet le délai à zéro, même pour une
+   modification mineure. Un commit qui porte exactement les mêmes changements (rebase
+   de Dependabot sur `main`) conserve le temps déjà écoulé : l'identité du changement
+   est l'empreinte des fichiers modifiés (chemin, statut et blob Git de chaque fichier
+   sur la tête de la PR), pas le SHA du commit. La levée et la validation, elles,
+   restent attachées au commit exact et sont refaites pour le nouveau SHA.
    Le calcul ignore les dates de commit et de publication fournies par l'amont.
-5. Un contrôle horaire lève l'embargo au plus tôt à l'échéance, remplace le label
+5. Un contrôle planifié (deux fois par heure) lève l'embargo au plus tôt à l'échéance, remplace le label
    par **supply-chain: eligible**. Une PR en Draft reste en Draft jusqu'à une
    action de son auteur ; sa validation attend ce passage manuel en Ready.
 6. Le contrôleur déclenche explicitement la validation de ce SHA. Le workflow
@@ -55,16 +60,21 @@ La configuration de [Dependabot](../.github/dependabot.yml) applique aux
   espacées de 14 à 17 jours, plutôt qu'une vérification quotidienne susceptible
   de remplacer les PR par une nouvelle version ;
 - `rebase-strategy: disabled` : pas de rebase automatique des nouvelles PR lorsque
-  `main` évolue. Si un conflit exige un rebase, il doit être demandé explicitement
-  et le nouveau SHA recommence son embargo.
+  `main` évolue. Si un conflit exige un rebase, il doit être demandé explicitement ;
+  un rebase qui ne change pas le contenu conserve le délai déjà écoulé.
 
-Exemple : une PR ouverte le 1er devient éligible au plus tôt le 8, ce qui laisse
-ensuite environ 7 jours pour la valider et la fusionner avant la campagne du 15.
-Le contrôleur horaire et la durée de validation peuvent réduire cette fenêtre.
-Il n'y a qu'un délai de quarantaine : les 7 jours à partir de la première
-observation locale du SHA de la PR. Ce n'est ni la date de création GitHub de la
+Exemple : une PR ouverte le 1er devient éligible au plus tôt le 5, ce qui laisse
+ensuite environ 10 jours pour la valider et la fusionner avant la campagne du 15.
+Le contrôleur (deux passages planifiés par heure, souvent sautés par GitHub) et la durée de validation peuvent réduire cette fenêtre.
+Il n'y a qu'un délai de quarantaine : les 4 jours à partir de la première
+observation locale du changement de la PR. Ce n'est ni la date de création GitHub de la
 PR ni la date de publication de l'image amont. Si une PR est restaurée avec le
 même SHA et son commentaire d'embargo, son délai déjà écoulé est conservé.
+
+La durée `days` déployée sur `main` s'applique aussi aux PR déjà en attente,
+dans les deux sens, toujours comptée depuis la première observation, qui n'est
+jamais réécrite. Réduire la durée rend donc éligibles les PR qui ont déjà attendu
+la nouvelle durée ; la modifier passe par une PR relue sur `main`.
 
 Le cooldown natif a été désactivé parce qu'un recalcul (`@dependabot rebase`)
 pouvait exclure la version d'une PR existante, puis fermer cette PR avec le motif
@@ -89,7 +99,7 @@ Référence : [options Dependabot : cooldown, rebase et calendrier](https://docs
 ## Gestion optionnelle des Draft
 
 `manage_drafts: false` désactive tous les changements automatiques de Draft/Ready.
-Cette option est indépendante des 7 jours d'embargo et des statuts requis.
+Cette option est indépendante des 4 jours d'embargo et des statuts requis.
 
 Si la gestion des Draft est réactivée avec un jeton adapté, le premier refus
 `FORBIDDEN` (GraphQL ou HTTP 403) est mémorisé dans l'état signé de la PR avec

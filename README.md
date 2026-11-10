@@ -11,7 +11,7 @@ Every image in this repository is:
 
 ## Images
 
-Les PR modifiant la supply chain sont placées en **Draft sous embargo de 7 jours**,
+Les PR modifiant la supply chain sont placées en **Draft sous embargo de 4 jours**,
 sans build ni scan de leur contenu avant la levée.
 Voir la [politique d'embargo](./docs/embargo.md).
 
