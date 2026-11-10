@@ -5,7 +5,8 @@ on:
   pull_request_target:
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft, labeled, unlabeled]
   schedule:
-    - cron: '23 * * * *'
+    # Two slots per hour: GitHub regularly drops scheduled runs (gaps of several hours).
+    - cron: '23,53 * * * *'
   workflow_dispatch:
 
 permissions:

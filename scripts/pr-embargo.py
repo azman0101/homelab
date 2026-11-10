@@ -3,6 +3,7 @@
 import argparse
 from datetime import datetime, timedelta, timezone
 import fnmatch
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -35,16 +36,40 @@ def relevant(files, policy):
                        for pattern in policy['excluded_paths']) for path in files)
 
 
-def state_for(pr, previous, policy, at):
-    # Only the head SHA is trusted as an identity, never the upstream release date
-    # or an author-controlled commit date. Any push restarts the entire delay.
-    if previous and previous.get('sha') == pr['head']['sha']:
+def fingerprint_of(items):
+    # Identity of the change itself: every touched path with the blob GitHub reports
+    # for it on the PR head. A rebase onto unrelated main commits keeps it; any
+    # content change in a touched file (new version, edited script) alters it.
+    # Without a blob SHA for every file there is no safe identity: return None.
+    entries = []
+    for item in items:
+        if not item.get('sha'):
+            return None
+        entries.append([item.get('status'), item['filename'],
+                        item.get('previous_filename'), item['sha']])
+    return hashlib.sha256(json.dumps(sorted(entries, key=str)).encode()).hexdigest() if entries else None
+
+
+def state_for(pr, previous, policy, at, fingerprint=None):
+    # Only GitHub metadata is trusted, never the upstream release date or an
+    # author-controlled commit date. The clock starts when this controller first
+    # sees the change; a new commit restarts it unless it carries identical changes.
+    sha = pr['head']['sha']
+    same_commit = previous and previous.get('sha') == sha
+    same_changes = previous and fingerprint and previous.get('fingerprint') == fingerprint
+    if same_commit or same_changes:
         state = dict(previous)
-        # A stricter policy cannot be bypassed by keeping an older deadline.
-        deadline = timestamp(state['first_seen']) + timedelta(days=policy['days'])
-        state['until'] = max(timestamp(state['until']), deadline).isoformat()
+        if not same_commit:
+            # Rebased commit with the same changes: the waiting time carries over,
+            # but release and validation are tied to an exact commit and start over.
+            state.update(sha=sha, released=False, dispatched=False)
+        if fingerprint:
+            state['fingerprint'] = fingerprint
+        # The policy deployed on main is authoritative, in both directions; changing
+        # it requires a reviewed change to main. first_seen itself never moves.
+        state['until'] = (timestamp(state['first_seen']) + timedelta(days=policy['days'])).isoformat()
         return state
-    return {'sha': pr['head']['sha'], 'first_seen': at.isoformat(),
+    return {'sha': sha, 'first_seen': at.isoformat(), 'fingerprint': fingerprint,
             'until': (at + timedelta(days=policy['days'])).isoformat(),
             'managed_draft': (previous or {}).get('managed_draft', not pr['draft']),
             # A new commit does not change the token's Draft permissions.
@@ -82,7 +107,7 @@ def body_for(state, policy):
             f"- Commit observé : `{state['sha']}`\n"
             f"- Première observation : **{state['first_seen']}**\n"
             f"- Fin au plus tôt : **{state['until']}** (UTC, {policy['days']} jours)\n\n"
-            'Tout nouveau commit redémarre le délai. Les labels ne constituent pas une autorisation.\n'
+            'Tout commit qui modifie le contenu redémarre le délai ; un rebase à l\'identique le conserve. Les labels ne constituent pas une autorisation.\n'
             'La levée rend la PR éligible aux tests ; elle ne fusionne pas la PR et ne certifie pas son innocuité.\n')
 
 
@@ -127,15 +152,23 @@ class GitHub:
             raise RuntimeError(json.dumps(result['errors']))
 
 
-def pull_files(api, number):
+def pull_items(api, number):
+    return list(api.pages(f'pulls/{number}/files'))
+
+
+def paths_of(items):
     # Include previous names so renaming a protected file into a documentation
     # path cannot turn a supply-chain change into an exemption.
     paths = []
-    for item in api.pages(f'pulls/{number}/files'):
+    for item in items:
         paths.append(item['filename'])
         if item.get('previous_filename'):
             paths.append(item['previous_filename'])
     return paths
+
+
+def pull_files(api, number):
+    return paths_of(pull_items(api, number))
 
 
 def save(api, number, comment_id, state, policy):
@@ -203,10 +236,11 @@ def authorize(api, number, sha, policy):
         raise RuntimeError('PR closed, draft, or head changed; refusing CI')
     if pr['changed_files'] > 3000:
         raise RuntimeError('PR exceeds GitHub file-list limit; refusing CI')
-    if relevant(pull_files(api, number), policy):
+    items = pull_items(api, number)
+    if relevant(paths_of(items), policy):
         _, state = read_state(api.pages(f'issues/{number}/comments'))
         if state:
-            state = state_for(pr, state, policy, now())
+            state = state_for(pr, state, policy, now(), fingerprint_of(items))
         if not eligible(pr, state, now()) or not state.get('released'):
             raise RuntimeError('Embargo has not been released for this exact commit; refusing CI')
     return pr
@@ -220,7 +254,8 @@ def reconcile(api, number, policy):
     status(api, pr, policy, 'pending', 'Embargo evaluation in progress; CI is not authorized')
     if pr['changed_files'] > 3000:
         raise RuntimeError('PR exceeds GitHub file-list limit; embargo remains blocked')
-    if not relevant(pull_files(api, number), policy):
+    items = pull_items(api, number)
+    if not relevant(paths_of(items), policy):
         comment_id, previous = read_state(api.pages(f'issues/{number}/comments'))
         if previous:
             set_labels(api, number, policy, True)
@@ -232,7 +267,7 @@ def reconcile(api, number, policy):
                context='validation_context')
         return
     comment_id, previous = read_state(api.pages(f'issues/{number}/comments'))
-    state = state_for(pr, previous, policy, now())
+    state = state_for(pr, previous, policy, now(), fingerprint_of(items))
     if not eligible(pr, state, now()):
         state['released'] = False
         state['dispatched'] = False

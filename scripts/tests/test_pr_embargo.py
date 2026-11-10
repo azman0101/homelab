@@ -86,7 +86,7 @@ class EmbargoTests(unittest.TestCase):
         pull = pr()
         pull['created_at'] = '2000-01-01T00:00:00Z'
         state = e.state_for(pull, None, POLICY, AT)
-        self.assertEqual(e.timestamp(state['until']), AT + timedelta(days=7))
+        self.assertEqual(e.timestamp(state['until']), AT + timedelta(days=POLICY['days']))
         self.assertFalse(e.eligible(pull, state, AT))
 
     def test_new_commit_restarts_and_revokes_release(self):
@@ -94,15 +94,51 @@ class EmbargoTests(unittest.TestCase):
         previous.update(released=True, dispatched=True)
         updated = pr(sha='c' * 40)
         state = e.state_for(updated, previous, POLICY, AT + timedelta(days=8))
-        self.assertEqual(e.timestamp(state['until']), AT + timedelta(days=15))
+        self.assertEqual(e.timestamp(state['until']), AT + timedelta(days=8 + POLICY['days']))
         self.assertFalse(state['released'])
         self.assertFalse(state['dispatched'])
 
-    def test_same_sha_keeps_clock_and_stricter_policy_extends_it(self):
+    def test_same_sha_keeps_clock_and_deployed_policy_sets_deadline(self):
         state = e.state_for(pr(), None, POLICY, AT)
         self.assertEqual(e.state_for(pr(), state, POLICY, AT + timedelta(days=2)), state)
-        longer = dict(POLICY, days=14)
-        self.assertEqual(e.timestamp(e.state_for(pr(), state, longer, AT)['until']), AT + timedelta(days=14))
+        # The policy on main applies to PRs already waiting, longer or shorter,
+        # always counted from the unchanged first observation.
+        for days in (14, 2):
+            updated = e.state_for(pr(), state, dict(POLICY, days=days), AT + timedelta(days=1))
+            self.assertEqual(e.timestamp(updated['until']), AT + timedelta(days=days))
+            self.assertEqual(updated['first_seen'], state['first_seen'])
+
+    def test_rebase_with_identical_changes_keeps_clock_but_not_release(self):
+        files = [{'filename': 'caddy/Dockerfile', 'status': 'modified', 'sha': '1' * 40}]
+        previous = dict(e.state_for(pr(), None, POLICY, AT, e.fingerprint_of(files)),
+                        released=True, dispatched=True)
+        rebased = e.state_for(pr(sha='c' * 40), previous, POLICY, AT + timedelta(days=3),
+                              e.fingerprint_of(files))
+        self.assertEqual(rebased['first_seen'], previous['first_seen'])
+        self.assertEqual(rebased['sha'], 'c' * 40)
+        self.assertFalse(rebased['released'])
+        self.assertFalse(rebased['dispatched'])
+
+    def test_changed_content_or_unknown_blob_restarts_clock(self):
+        files = [{'filename': 'caddy/Dockerfile', 'status': 'modified', 'sha': '1' * 40}]
+        previous = e.state_for(pr(), None, POLICY, AT, e.fingerprint_of(files))
+        later = AT + timedelta(days=3)
+        for new_files in ([dict(files[0], sha='2' * 40)],
+                          files + [{'filename': 'caddy/extra.sh', 'status': 'added', 'sha': '3' * 40}],
+                          [{'filename': 'caddy/Dockerfile', 'status': 'modified'}]):
+            state = e.state_for(pr(sha='c' * 40), previous, POLICY, later, e.fingerprint_of(new_files))
+            self.assertEqual(e.timestamp(state['first_seen']), later, new_files)
+
+    @patch.object(e, 'now', return_value=AT + timedelta(days=3))
+    def test_reconcile_carries_clock_across_rebase(self, _):
+        files = [{'filename': 'caddy/Dockerfile', 'status': 'modified', 'sha': '1' * 40}]
+        state = e.state_for(pr(), None, POLICY, AT, e.fingerprint_of(files))
+        api = FakeAPI(pull=pr(sha='c' * 40), state=state, files=files)
+        e.reconcile(api, 1, POLICY)
+        saved = e.read_state([{'id': 10, 'user': {'login': e.BOT, 'type': 'Bot'},
+                               'body': [c for c in api.calls if c[1] == 'issues/comments/10'][-1][2]['body']}])[1]
+        self.assertEqual(saved['first_seen'], state['first_seen'])
+        self.assertEqual(saved['sha'], 'c' * 40)
 
     def test_fake_state_comment_is_ignored(self):
         state = e.state_for(pr(), None, POLICY, AT)
