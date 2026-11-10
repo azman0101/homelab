@@ -1,4 +1,4 @@
 # Upstream release pinned to its immutable manifest digest.
-FROM ghcr.io/dgtlmoon/changedetection.io:0.60.10@sha256:72f97681f390e4d6ae3e6585e1e0036449910f347144b766fc23910458566a1a
+FROM ghcr.io/dgtlmoon/changedetection.io:0.70.3@sha256:47b1e9cc3eff820e6022b655e3fcc948625f60c1770ae8b9c30aa3bf104dc255
 
 LABEL org.opencontainers.image.description="Website change detection"
