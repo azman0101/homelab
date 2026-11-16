@@ -5,7 +5,7 @@ Caddy web server with CrowdSec bouncer
 ## Upstream image
 
 ```
-caddy:2.11.7@sha256:f2a1290d0463aad60660d4ec134943f183ee2a5f6c3eb7bf32dd984f2f020772
+caddy:2.11.9@sha256:0c2243efcf437ab7f7a978f1027fcf0d4f9be8a75df27b1b3fbc5dbe0ffa8cf0
 ```
 
 ## Supply chain security
