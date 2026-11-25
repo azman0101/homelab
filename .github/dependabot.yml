@@ -1,42 +1,32 @@
 version: 2
 updates:
-  # Version updates: batches on the 1st and 15th at 06:00 UTC.
-  # Leave >=14 days between checks for the 4-day embargo and a merge window.
-  # Keep PRs visible: exclude all dependencies from native cooldown (including
-  # its default delay). Waiting is enforced by the PR embargo, not version filtering.
-  # The schedule limits superseding PRs, including Docker digest updates.
-  # Disable automatic rebases to limit superseding; a rebase with identical changes keeps its embargo clock.
-  # Dependabot security updates do not follow the version-update schedule.
+  # Check daily and let new releases age for four days before proposing them.
+  # The separate PR embargo still applies after a PR is opened.
+  # Security updates do not follow the version-update cooldown.
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "cron"
-      cronjob: "0 6 1,15 * *"
+      interval: "daily"
     cooldown:
-      exclude:
-        - "*"
+      default-days: 4
     rebase-strategy: "disabled"
 
   # Docker Images
   - package-ecosystem: "docker"
     directory: "/authelia"
     schedule:
-      interval: "cron"
-      cronjob: "0 6 1,15 * *"
+      interval: "daily"
     cooldown:
-      exclude:
-        - "*"
+      default-days: 4
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
     directory: "/caddy"
     schedule:
-      interval: "cron"
-      cronjob: "0 6 1,15 * *"
+      interval: "daily"
     cooldown:
-      exclude:
-        - "*"
+      default-days: 4
     rebase-strategy: "disabled"
     allow:
       - dependency-name: "caddy"
@@ -47,109 +37,87 @@ updates:
   - package-ecosystem: "docker"
     directory: "/crowdsec"
     schedule:
-      interval: "cron"
-      cronjob: "0 6 1,15 * *"
+      interval: "daily"
     cooldown:
-      exclude:
-        - "*"
+      default-days: 4
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
     directory: "/frigate"
     schedule:
-      interval: "cron"
-      cronjob: "0 6 1,15 * *"
+      interval: "daily"
     cooldown:
-      exclude:
-        - "*"
+      default-days: 4
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
     directory: "/home-assistant"
     schedule:
-      interval: "cron"
-      cronjob: "0 6 1,15 * *"
+      interval: "daily"
     cooldown:
-      exclude:
-        - "*"
+      default-days: 4
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
     directory: "/mosquitto"
     schedule:
-      interval: "cron"
-      cronjob: "0 6 1,15 * *"
+      interval: "daily"
     cooldown:
-      exclude:
-        - "*"
+      default-days: 4
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
     directory: "/pihole"
     schedule:
-      interval: "cron"
-      cronjob: "0 6 1,15 * *"
+      interval: "daily"
     cooldown:
-      exclude:
-        - "*"
+      default-days: 4
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
     directory: "/postfix-relay"
     schedule:
-      interval: "cron"
-      cronjob: "0 6 1,15 * *"
+      interval: "daily"
     cooldown:
-      exclude:
-        - "*"
+      default-days: 4
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
     directory: "/redis"
     schedule:
-      interval: "cron"
-      cronjob: "0 6 1,15 * *"
+      interval: "daily"
     cooldown:
-      exclude:
-        - "*"
+      default-days: 4
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
     directory: "/uptime-kuma"
     schedule:
-      interval: "cron"
-      cronjob: "0 6 1,15 * *"
+      interval: "daily"
     cooldown:
-      exclude:
-        - "*"
+      default-days: 4
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
     directory: "/influxdb"
     schedule:
-      interval: "cron"
-      cronjob: "0 6 1,15 * *"
+      interval: "daily"
     cooldown:
-      exclude:
-        - "*"
+      default-days: 4
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
     directory: "/portainer-ce"
     schedule:
-      interval: "cron"
-      cronjob: "0 6 1,15 * *"
+      interval: "daily"
     cooldown:
-      exclude:
-        - "*"
+      default-days: 4
     rebase-strategy: "disabled"
 
   - package-ecosystem: "docker"
     directory: "/changedetection"
     schedule:
-      interval: "cron"
-      cronjob: "0 6 1,15 * *"
+      interval: "daily"
     cooldown:
-      exclude:
-        - "*"
+      default-days: 4
     rebase-strategy: "disabled"
