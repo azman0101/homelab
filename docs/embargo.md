@@ -6,8 +6,8 @@ n'est nécessaire pour cette première version.
 
 ## Parcours d'une PR
 
-1. Dependabot propose les mises à jour de version par lots les **1er et 15 de chaque
-   mois à 06:00 UTC**, sans filtrage par âge de publication. Dès son ouverture,
+1. Dependabot vérifie les mises à jour de version **chaque jour** et applique un
+   cooldown de 4 jours à partir de la publication de chaque version. Dès son ouverture,
    la PR est visible et entre dans l’embargo de 4 jours.
 2. Le contrôleur observe son SHA, enregistre l'heure de première observation dans
    un commentaire signé par `github-actions[bot]`, pose le label
@@ -51,24 +51,20 @@ personne ou le bot qui ouvre la PR. Les chemins exclus sont configurables.
 ## Cooldown et fenêtre de fusion Dependabot
 
 La configuration de [Dependabot](../.github/dependabot.yml) applique aux
-13 images Docker et aux GitHub Actions :
+entrées Docker et GitHub Actions :
 
-- `cooldown.exclude: ["*"]` : toutes les dépendances sont exclues du cooldown
-  natif, y compris de son délai implicite. Une version récente peut donc avoir
-  une PR visible sous embargo, au lieu de disparaître du calcul des versions ;
-- `schedule.interval: cron`, `cronjob: "0 6 1,15 * *"` : deux campagnes par mois,
-  espacées de 14 à 17 jours, plutôt qu'une vérification quotidienne susceptible
-  de remplacer les PR par une nouvelle version ;
+- `cooldown.default-days: 4` : chaque version devient éligible 4 jours après sa
+  publication. Plusieurs versions peuvent devenir éligibles le même jour ;
+- `schedule.interval: daily` : vérification quotidienne des mises à jour de version ;
 - `rebase-strategy: disabled` : pas de rebase automatique des nouvelles PR lorsque
   `main` évolue. Si un conflit exige un rebase, il doit être demandé explicitement ;
   un rebase qui ne change pas le contenu conserve le délai déjà écoulé.
 
-Exemple : une PR ouverte le 1er devient éligible au plus tôt le 5, ce qui laisse
-ensuite environ 10 jours pour la valider et la fusionner avant la campagne du 15.
-Le contrôleur (deux passages planifiés par heure, souvent sautés par GitHub) et la durée de validation peuvent réduire cette fenêtre.
-Il n'y a qu'un délai de quarantaine : les 4 jours à partir de la première
-observation locale du changement de la PR. Ce n'est ni la date de création GitHub de la
-PR ni la date de publication de l'image amont. Si une PR est restaurée avec le
+Exemple : une version publiée le 1er peut être proposée à partir du 5. Si la PR
+est observée le 5, elle devient éligible à la validation au plus tôt le 9.
+Le contrôleur (deux passages planifiés par heure, souvent sautés par GitHub) et la durée de validation peuvent retarder la fusion.
+L’embargo local de 4 jours commence à la première observation du changement dans
+la PR. Si une PR est restaurée avec le
 même SHA et son commentaire d'embargo, son délai déjà écoulé est conservé.
 
 La durée `days` déployée sur `main` s'applique aussi aux PR déjà en attente,
@@ -76,23 +72,23 @@ dans les deux sens, toujours comptée depuis la première observation, qui n'est
 jamais réécrite. Réduire la durée rend donc éligibles les PR qui ont déjà attendu
 la nouvelle durée ; la modifier passe par une PR relue sur `main`.
 
-Le cooldown natif a été désactivé parce qu'un recalcul (`@dependabot rebase`)
+Avant la réactivation du cooldown natif, un recalcul (`@dependabot rebase`)
 pouvait exclure la version d'une PR existante, puis fermer cette PR avec le motif
 « up to date », même si la mise à jour n'avait pas été intégrée à `main`. Cela a
-été constaté sur CrowdSec #178 et Caddy #184. Le calendrier espacé et la
-désactivation des rebases automatiques limitent les remplacements ; le contrôleur
-local reste le seul responsable de l'attente avant exécution. Le calcul ne dépend
-pas de dates de publication parfois absentes ou différentes selon le registre.
+été constaté sur CrowdSec #178 et Caddy #184. Ce risque subsiste si la version
+visée est encore dans le cooldown. Une version devenue éligible peut aussi
+remplacer une PR existante. Le contrôleur local reste responsable de l'attente
+avant exécution, indépendamment des dates de publication du registre.
 
 Les mises à jour de sécurité ne suivent pas le calendrier des mises à jour de
-version ; elles peuvent donc interrompre cette cadence. Elles restent soumises
-à l'embargo du dépôt : cette configuration n'autorise aucun build anticipé. Un lancement manuel de Dependabot peut également créer une PR
-en dehors des deux campagnes.
+version et sont exemptées du cooldown natif. Elles restent soumises
+à l'embargo du dépôt : cette configuration n'autorise aucun build anticipé. Un lancement manuel de Dependabot peut également créer une PR en dehors de la vérification
+quotidienne.
 
 GitHub indique que les PR déjà ouvertes lors de la désactivation des rebases
 peuvent continuer à être rebasées jusqu'à 30 jours après leur ouverture. Cette
 configuration ne promet donc pas de figer immédiatement les PR existantes, ni de
-conserver indéfiniment une PR non fusionnée au-delà de la campagne suivante.
+conserver indéfiniment une PR non fusionnée au-delà de la prochaine vérification.
 
 Référence : [options Dependabot : cooldown, rebase et calendrier](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference).
 
