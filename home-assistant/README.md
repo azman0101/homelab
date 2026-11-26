@@ -5,7 +5,7 @@ Home Assistant - Open source home automation
 ## Upstream image
 
 ```
-ghcr.io/home-assistant/home-assistant:2026.11.1@sha256:6785d1eca68747a524c156faae1b139ed415c07357386ae6fe17291986e59e82
+ghcr.io/home-assistant/home-assistant:2026.11.3@sha256:24e541ddae5818bf8eb27898b9ba00d0c344a655aa5097e9e9bd4b19356be847
 ```
 
 ## Supply chain security
