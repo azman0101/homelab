@@ -6,7 +6,7 @@ RUN xcaddy build \
     --output /usr/bin/caddy
 
 # Stage 2: Final
-FROM caddy:2.11.9@sha256:0c2243efcf437ab7f7a978f1027fcf0d4f9be8a75df27b1b3fbc5dbe0ffa8cf0
+FROM caddy:2.11.9@sha256:4851e54a46b206517c574821bb5cc67f170d2156041e9fbc4c9193b45e84a75b
 
 LABEL org.opencontainers.image.description="Caddy web server with CrowdSec bouncer"
 
